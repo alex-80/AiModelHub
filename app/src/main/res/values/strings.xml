@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AI Model Hub</string>
+    <string name="notification_channel_download">Model Download</string>
+    <string name="notification_download_title">Downloading model</string>
+    <string name="notification_download_success">Model downloaded successfully</string>
+    <string name="notification_download_failed">Model download failed</string>
+</resources>
