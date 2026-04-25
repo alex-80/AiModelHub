@@ -1,5 +1,7 @@
 package com.ai_model_hub.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -38,6 +40,7 @@ fun AiModelHubNavGraph() {
     val isChatActive = navBackStackEntry?.destination?.route?.startsWith("chat/") == true
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -86,7 +89,9 @@ fun AiModelHubNavGraph() {
         NavHost(
             navController = navController,
             startDestination = Routes.MODEL_MANAGER,
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier
+                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues),
         ) {
             composable(Routes.MODEL_MANAGER) {
                 ModelManagerScreen(
