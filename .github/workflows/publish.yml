@@ -1,4 +1,4 @@
-name: Publish SDK to JitPack
+name: Publish SDK to GitHub Packages
 
 on:
   push:
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Checkout
@@ -22,14 +23,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Build SDK release
-        run: ./gradlew :sdk:assembleRelease
-
-      - name: Pre-trigger JitPack build
-        run: |
-          TAG=${GITHUB_REF_NAME}
-          echo "Triggering JitPack build for tag: $TAG"
-          curl -s "https://jitpack.io/api/builds/com.github.alex-80/AiModelHub/$TAG" \
-            -X GET \
-            -o /dev/null \
-            -w "JitPack response: %{http_code}\n" || true
+      - name: Publish SDK to GitHub Packages
+        run: ./gradlew :sdk:publishReleasePublicationToGitHubPackagesRepository -PVERSION_NAME=${GITHUB_REF_NAME#v}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

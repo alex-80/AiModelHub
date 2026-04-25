@@ -139,21 +139,36 @@ No other files need to change.
 
 ## SDK Integration
 
-[![](https://jitpack.io/v/alex-80/AiModelHub.svg)](https://jitpack.io/#alex-80/AiModelHub)
-
 Other Android apps can use the `:sdk` module to call AI inference in AiModelHub without bundling any model weights themselves.
 
-### 1. Add the dependency
+> **Note:** GitHub Packages requires authentication even for public repositories. You need a [GitHub Personal Access Token](https://github.com/settings/tokens) with the `read:packages` scope.
 
-Add the JitPack repository to your `settings.gradle.kts`:
+### 1. Configure credentials
+
+Add your GitHub username and token to `~/.gradle/gradle.properties` (never commit these to your repo):
+
+```properties
+# ~/.gradle/gradle.properties
+gpr.user=YOUR_GITHUB_USERNAME
+gpr.key=YOUR_GITHUB_TOKEN
+```
+
+### 2. Add the repository and dependency
+
+In your `settings.gradle.kts`:
 
 ```kotlin
-// settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+        maven {
+            url = uri("https://maven.pkg.github.com/alex-80/AiModelHub")
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull
+                password = providers.gradleProperty("gpr.key").orNull
+            }
+        }
     }
 }
 ```
@@ -167,7 +182,7 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 > Replace `0.1.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
 
-### 2. Declare the query in AndroidManifest.xml
+### 3. Declare the query in AndroidManifest.xml
 
 ```xml
 <queries>
@@ -175,7 +190,7 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 </queries>
 ```
 
-### 3. Use `AiHubClient`
+### 4. Use `AiHubClient`
 
 ```kotlin
 class MyViewModel(app: Application) : AndroidViewModel(app) {

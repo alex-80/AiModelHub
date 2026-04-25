@@ -139,21 +139,36 @@ Model(
 
 ## SDK 集成指南
 
-[![](https://jitpack.io/v/alex-80/AiModelHub.svg)](https://jitpack.io/#alex-80/AiModelHub)
-
 第三方 Android 应用可以通过 `:sdk` 模块调用 AiModelHub 的推理能力，无需自行打包任何模型权重文件。
 
-### 1. 添加依赖
+> **注意：** GitHub Packages 即使对公开仓库也需要身份验证。你需要一个具有 `read:packages` 权限的 [GitHub Personal Access Token](https://github.com/settings/tokens)。
 
-在 `settings.gradle.kts` 中添加 JitPack 仓库：
+### 1. 配置凭据
+
+将你的 GitHub 用户名和 Token 添加到 `~/.gradle/gradle.properties`（**不要提交到代码仓库**）：
+
+```properties
+# ~/.gradle/gradle.properties
+gpr.user=你的GitHub用户名
+gpr.key=你的GitHub_Token
+```
+
+### 2. 添加仓库和依赖
+
+在 `settings.gradle.kts` 中：
 
 ```kotlin
-// settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+        maven {
+            url = uri("https://maven.pkg.github.com/alex-80/AiModelHub")
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull
+                password = providers.gradleProperty("gpr.key").orNull
+            }
+        }
     }
 }
 ```
@@ -167,7 +182,7 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 > 将 `0.1.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
 
-### 2. 在 AndroidManifest.xml 中声明查询权限
+### 3. 在 AndroidManifest.xml 中声明查询权限
 
 ```xml
 <queries>
@@ -175,7 +190,7 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 </queries>
 ```
 
-### 3. 使用 `AiHubClient`
+### 4. 使用 `AiHubClient`
 
 ```kotlin
 class MyViewModel(app: Application) : AndroidViewModel(app) {
