@@ -21,10 +21,10 @@ jobs:
         id: get-tag
         run: echo "tag-name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: gradle
 
@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apk-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/app-*-release.apk
 
   create-release:
     needs: build
@@ -69,17 +69,19 @@ jobs:
           name: apk-release
           path: ./apk
 
-      - name: Rename APK
+      - name: Rename APKs
         run: |
           cd ./apk
-          mv app-release.apk AiModelHub-${{ needs.build.outputs.tag-name }}.apk
+          mv app-arm64-v8a-release.apk  AiModelHub-${{ needs.build.outputs.tag-name }}-arm64-v8a.apk
+          mv app-x86_64-release.apk     AiModelHub-${{ needs.build.outputs.tag-name }}-x86_64.apk
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create ${{ needs.build.outputs.tag-name }} \
-            ./apk/AiModelHub-${{ needs.build.outputs.tag-name }}.apk \
+            ./apk/AiModelHub-${{ needs.build.outputs.tag-name }}-arm64-v8a.apk \
+            ./apk/AiModelHub-${{ needs.build.outputs.tag-name }}-x86_64.apk \
             --repo ${{ github.repository }} \
             --title "${{ needs.build.outputs.tag-name }}" \
             --generate-notes
