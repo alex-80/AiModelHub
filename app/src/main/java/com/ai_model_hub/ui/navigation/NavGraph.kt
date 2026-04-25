@@ -23,11 +23,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ai_model_hub.ui.chat.ChatEmptyScreen
 import com.ai_model_hub.ui.chat.ChatScreen
 import com.ai_model_hub.ui.modelmanager.ModelManagerScreen
 
 object Routes {
     const val MODEL_MANAGER = "model_manager"
+    const val CHAT_EMPTY = "chat"
     const val CHAT = "chat/{modelName}"
     fun chat(modelName: String) = "chat/$modelName"
 }
@@ -37,7 +39,7 @@ fun AiModelHubNavGraph() {
     val navController = rememberNavController()
     var currentChatModel by remember { mutableStateOf<String?>(null) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val isChatActive = navBackStackEntry?.destination?.route?.startsWith("chat/") == true
+    val isChatActive = navBackStackEntry?.destination?.route?.startsWith("chat") == true
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -66,8 +68,13 @@ fun AiModelHubNavGraph() {
                 NavigationBarItem(
                     selected = isChatActive,
                     onClick = {
-                        currentChatModel?.let { model ->
+                        val model = currentChatModel
+                        if (model != null) {
                             navController.navigate(Routes.chat(model)) {
+                                launchSingleTop = true
+                            }
+                        } else {
+                            navController.navigate(Routes.CHAT_EMPTY) {
                                 launchSingleTop = true
                             }
                         }
@@ -81,7 +88,6 @@ fun AiModelHubNavGraph() {
                         unselectedIconColor = MaterialTheme.colorScheme.outline,
                         unselectedTextColor = MaterialTheme.colorScheme.outline,
                     ),
-                    enabled = currentChatModel != null,
                 )
             }
         }
@@ -93,6 +99,17 @@ fun AiModelHubNavGraph() {
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues),
         ) {
+            composable(Routes.CHAT_EMPTY) {
+                ChatEmptyScreen(
+                    onModelSelected = { modelName ->
+                        currentChatModel = modelName
+                        navController.navigate(Routes.chat(modelName)) {
+                            popUpTo(Routes.CHAT_EMPTY) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
             composable(Routes.MODEL_MANAGER) {
                 ModelManagerScreen(
                     onOpenChat = { modelName ->
