@@ -15,10 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
@@ -30,6 +30,6 @@ jobs:
           TAG=${GITHUB_REF_NAME}
           echo "Triggering JitPack build for tag: $TAG"
           curl -s "https://jitpack.io/api/builds/com.github.alex-80/AiModelHub/$TAG" \
-            -X POST \
+            -X GET \
             -o /dev/null \
             -w "JitPack response: %{http_code}\n" || true
