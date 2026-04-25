@@ -2,5 +2,7 @@ jdk:
   - openjdk21
 before_install:
   - chmod +x gradlew
+  - sed -i '/foojay-resolver-convention/d' settings.gradle.kts
+  - printf '\nkotlin.compiler.execution.strategy=in-process\norg.gradle.java.installations.auto-download=false\n' >> gradle.properties
 install:
-  - ./gradlew --no-daemon -Pkotlin.compiler.execution.strategy=in-process :sdk:assembleRelease :sdk:publishToMavenLocal
+  - ./gradlew --no-daemon :sdk:assembleRelease :sdk:publishToMavenLocal
