@@ -18,6 +18,7 @@ import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.concurrent.CancellationException
 
 private const val TAG = "LiteRtLmHelper"
@@ -50,7 +51,10 @@ object LiteRtLmHelper {
         // Pre-check space to give a friendly error instead of a hard crash.
         val freeBytes = StatFs(xnnpackCacheDir.absolutePath).availableBytes
         val requiredBytes = 1_500L * 1024 * 1024 // 1.5 GB conservative estimate
-        if (freeBytes < requiredBytes) {
+        val modelFileName = File(modelPath).name
+        val cacheAlreadyExists =
+            xnnpackCacheDir.listFiles()?.any { it.name.startsWith(modelFileName) } == true
+        if (!cacheAlreadyExists && freeBytes < requiredBytes) {
             val msg = "空间不足：XNNPack 权重缓存需要至少 1.5 GB 可用空间，" +
                     "当前仅剩 ${freeBytes / 1_048_576} MB。请清理存储后重试。"
             Log.e(TAG, msg)
