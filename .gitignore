@@ -12,3 +12,6 @@ fastlane/fastlane.json
 fastlane/report.xml
 .kotlin/
 build
+*.log
+local
+*.local
