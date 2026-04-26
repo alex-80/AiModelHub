@@ -8,6 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.worker.DownloadWorker
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -15,7 +16,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "DownloadRepository"
-private const val MODEL_NAME_TAG = "modelName"
+const val KEY_MODEL_NAME = "modelName"
+const val KEY_MODEL_URL = "modelUrl"
+const val KEY_MODEL_DOWNLOAD_FILE_NAME = "downloadFileName"
+const val KEY_MODEL_DOWNLOAD_MODEL_DIR = "modelDir"
+const val KEY_MODEL_TOTAL_BYTES = "totalBytes"
+const val KEY_MODEL_DOWNLOAD_RECEIVED_BYTES = "receivedBytes"
+const val KEY_MODEL_DOWNLOAD_RATE = "downloadRate"
+const val KEY_MODEL_DOWNLOAD_REMAINING_MS = "remainingMs"
+const val KEY_MODEL_DOWNLOAD_ERROR_MESSAGE = "errorMessage"
 
 interface DownloadRepository {
     fun downloadModel(
@@ -41,8 +50,7 @@ class DefaultDownloadRepository @Inject constructor(
         val inputData = Data.Builder()
             .putString(KEY_MODEL_NAME, model.name)
             .putString(KEY_MODEL_URL, model.url)
-            .putString(KEY_MODEL_COMMIT_HASH, model.version)
-            .putString(KEY_MODEL_DOWNLOAD_MODEL_DIR, model.normalizedName)
+            .putString(KEY_MODEL_DOWNLOAD_MODEL_DIR, model.getModelDir(context))
             .putString(KEY_MODEL_DOWNLOAD_FILE_NAME, model.downloadFileName)
             .putLong(KEY_MODEL_TOTAL_BYTES, model.sizeInBytes)
             .build()
@@ -50,7 +58,7 @@ class DefaultDownloadRepository @Inject constructor(
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(inputData)
-            .addTag("$MODEL_NAME_TAG:${model.name}")
+            .addTag("$KEY_MODEL_NAME:${model.name}")
             .build()
 
         workManager.enqueueUniqueWork(model.name, ExistingWorkPolicy.REPLACE, request)
@@ -58,7 +66,7 @@ class DefaultDownloadRepository @Inject constructor(
     }
 
     override fun cancelDownload(model: Model) {
-        workManager.cancelAllWorkByTag("$MODEL_NAME_TAG:${model.name}")
+        workManager.cancelAllWorkByTag("$KEY_MODEL_NAME:${model.name}")
     }
 
     override fun cancelAll(onComplete: () -> Unit) {

@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Stop
@@ -51,7 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.ai_model_hub.data.ModelAllowlist
+import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.ui.modelmanager.ModelManagerViewModel
 import java.text.SimpleDateFormat
 import java.util.Date

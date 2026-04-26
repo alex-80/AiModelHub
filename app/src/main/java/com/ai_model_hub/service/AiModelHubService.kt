@@ -4,8 +4,8 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import com.ai_model_hub.data.Model
-import com.ai_model_hub.data.ModelAllowlist
+import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.runtime.LiteRtLmHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
+import com.ai_model_hub.sdk.ModelAllowlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,7 @@ data class DemoUiState(
     val errorMessage: String = "",
 )
 
-val MODELS = listOf("Gemma 4 E2B", "Gemma 4 E4B")
+val MODELS = ModelAllowlist.models.map { it.name }
 
 class DemoViewModel(app: Application) : AndroidViewModel(app) {
 

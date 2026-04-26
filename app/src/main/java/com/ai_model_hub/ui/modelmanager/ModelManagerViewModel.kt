@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.data.AppRepository
 import com.ai_model_hub.data.DownloadRepository
-import com.ai_model_hub.data.Model
-import com.ai_model_hub.data.ModelAllowlist
+import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.data.ModelDownloadStatus
 import com.ai_model_hub.data.ModelDownloadStatusType
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -3,8 +3,9 @@ package com.ai_model_hub.ui.chat
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ai_model_hub.data.ModelAllowlist
+import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.runtime.LiteRtLmHelper
+import com.ai_model_hub.sdk.Model
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +38,7 @@ class ChatViewModel @Inject constructor(
     val uiState: StateFlow<ChatUiState> = _uiState
 
     private var currentModelName: String? = null
-    private var loadedModel: com.ai_model_hub.data.Model? = null
+    private var loadedModel: Model? = null
 
     fun initialize(modelName: String) {
         if (currentModelName == modelName && loadedModel?.instance != null) return

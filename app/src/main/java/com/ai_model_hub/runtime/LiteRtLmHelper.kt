@@ -3,7 +3,8 @@ package com.ai_model_hub.runtime
 import android.content.Context
 import android.os.StatFs
 import android.util.Log
-import com.ai_model_hub.data.Model
+import com.ai_model_hub.data.getModelFilePath
+import com.ai_model_hub.sdk.Model
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents

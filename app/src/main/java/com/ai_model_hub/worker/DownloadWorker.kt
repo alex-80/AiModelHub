@@ -13,7 +13,6 @@ import androidx.work.Data
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.ai_model_hub.MainActivity
-import com.ai_model_hub.data.KEY_MODEL_COMMIT_HASH
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_ERROR_MESSAGE
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_FILE_NAME
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_MODEL_DIR
@@ -23,7 +22,6 @@ import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_REMAINING_MS
 import com.ai_model_hub.data.KEY_MODEL_NAME
 import com.ai_model_hub.data.KEY_MODEL_TOTAL_BYTES
 import com.ai_model_hub.data.KEY_MODEL_URL
-import com.ai_model_hub.data.TMP_FILE_EXT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -34,6 +32,7 @@ import java.net.URL
 
 private const val TAG = "DownloadWorker"
 private const val CHANNEL_ID = "model_download_channel"
+private const val TMP_FILE_EXT = "tmp"
 
 class DownloadWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
@@ -55,7 +54,6 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         val fileName =
             inputData.getString(KEY_MODEL_DOWNLOAD_FILE_NAME) ?: return@withContext Result.failure()
         val modelName = inputData.getString(KEY_MODEL_NAME) ?: "Model"
-        val version = inputData.getString(KEY_MODEL_COMMIT_HASH) ?: "_"
         val modelDir =
             inputData.getString(KEY_MODEL_DOWNLOAD_MODEL_DIR) ?: return@withContext Result.failure()
         val totalBytes = inputData.getLong(KEY_MODEL_TOTAL_BYTES, 0L)
@@ -63,10 +61,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         setForeground(createForegroundInfo(0, modelName))
 
         try {
-            val outputDir = File(
-                applicationContext.getExternalFilesDir(null),
-                listOf(modelDir, version).joinToString(File.separator)
-            )
+            val outputDir = File(modelDir)
             if (!outputDir.exists()) outputDir.mkdirs()
 
             val tmpFile = File(outputDir, "$fileName.$TMP_FILE_EXT")
