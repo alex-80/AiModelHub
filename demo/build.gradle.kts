@@ -7,8 +7,8 @@ val basePackage = project.property("BASE_PACKAGE") as String
 val compileSdkVer = (project.property("COMPILE_SDK") as String).toInt()
 val minSdkVer = (project.property("MIN_SDK") as String).toInt()
 val targetSdkVer = (project.property("TARGET_SDK") as String).toInt()
-val versionCode = (project.property("VERSION_CODE") as String).toInt()
-val versionName = project.property("VERSION_NAME") as String
+val appVersionCode = (project.property("VERSION_CODE") as String).toInt()
+val appVersionName = project.property("VERSION_NAME") as String
 
 android {
     namespace = "$basePackage.demo"
@@ -18,8 +18,8 @@ android {
         applicationId = "$basePackage.demo"
         minSdk = minSdkVer
         targetSdk = targetSdkVer
-        this.versionCode = versionCode
-        this.versionName = versionName
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     buildTypes {
