@@ -4,7 +4,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.IBinder
+import android.util.Log
 import com.ai_model_hub.service.IAiModelHubService
 import com.ai_model_hub.service.IAiResponseCallback
 import kotlinx.coroutines.channels.awaitClose
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.callbackFlow
 
 private const val HOST_PACKAGE = "com.ai_model_hub"
 private const val SERVICE_CLASS = "com.ai_model_hub.service.AiModelHubService"
+private const val TAG = "AiHubClient"
 
 /**
  * SDK entry point for binding to AiModelHub service.
@@ -64,11 +67,36 @@ class AiHubClient(private val context: Context) {
         val intent = Intent().apply {
             component = ComponentName(HOST_PACKAGE, SERVICE_CLASS)
         }
+
+        // Diagnose package visibility and service resolvability before binding.
+        // This helps pinpoint the root cause on OEM ROMs that
+        // apply additional inter-process binding restrictions.
+        val pm = context.packageManager
+        val isPackageVisible = try {
+            pm.getApplicationInfo(HOST_PACKAGE, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+        val isServiceResolvable = pm.resolveService(intent, 0) != null
+        Log.d(TAG, "connect: packageVisible=$isPackageVisible, serviceResolvable=$isServiceResolvable")
+
         val bound = context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         if (!bound) {
-            _connectionState.value = ConnectionState.Error(
-                "bindService failed — is AiModelHub installed? (package: $HOST_PACKAGE)"
-            )
+            val reason = when {
+                !isPackageVisible ->
+                    "bindService failed — AiModelHub (package: $HOST_PACKAGE) is not visible to this app. " +
+                        "Ensure <queries><package android:name=\"$HOST_PACKAGE\"/></queries> is declared in your manifest."
+                !isServiceResolvable ->
+                    "bindService failed — AiModelHub is installed but the service could not be resolved. " +
+                        "The app may not be running or the service is disabled."
+                else ->
+                    "bindService failed — AiModelHub is installed and visible, but the system refused the binding. " +
+                        "On some devices check whether app isolation or battery optimization " +
+                        "is blocking cross-app IPC for package: $HOST_PACKAGE."
+            }
+            Log.w(TAG, reason)
+            _connectionState.value = ConnectionState.Error(reason)
         }
     }
 

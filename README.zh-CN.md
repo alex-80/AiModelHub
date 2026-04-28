@@ -182,11 +182,19 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 > 将 `0.1.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
 
-### 3. 在 AndroidManifest.xml 中声明查询权限
+### 3. 在 AndroidManifest.xml 中声明权限和查询
 
 ```xml
+<!-- 绑定 AiModelHubService 所需权限 -->
+<uses-permission android:name="com.ai_model_hub.permission.BIND_SERVICE" />
+
 <queries>
     <package android:name="com.ai_model_hub" />
+    <!-- 同时声明服务 action，确保在 OEM 定制 ROM 上
+         bindService 的包可见性检查能顺利通过。-->
+    <intent>
+        <action android:name="com.ai_model_hub.service.AiModelHubService" />
+    </intent>
 </queries>
 ```
 

@@ -182,11 +182,19 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 > Replace `0.1.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
 
-### 3. Declare the query in AndroidManifest.xml
+### 3. Declare manifest entries
 
 ```xml
+<!-- Required to bind to AiModelHubService -->
+<uses-permission android:name="com.ai_model_hub.permission.BIND_SERVICE" />
+
 <queries>
     <package android:name="com.ai_model_hub" />
+    <!-- Declare the service action for OEM ROMs that require an explicit
+         <intent> query in addition to <package> for bindService to succeed. -->
+    <intent>
+        <action android:name="com.ai_model_hub.service.AiModelHubService" />
+    </intent>
 </queries>
 ```
 

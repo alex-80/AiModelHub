@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required to bind to AiModelHubService -->
+    <uses-permission android:name="com.ai_model_hub.permission.BIND_SERVICE" />
+
     <!-- Android 11+: declare target package so PackageManager can find the service -->
     <queries>
         <package android:name="com.ai_model_hub" />
+        <!-- Declare the service action so bindService visibility checks pass on OEM ROMs that require an explicit <intent> query in addition to
+             the <package> declaration. -->
+        <intent>
+            <action android:name="com.ai_model_hub.service.AiModelHubService" />
+        </intent>
     </queries>
 
     <application
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="AiHub Demo"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"

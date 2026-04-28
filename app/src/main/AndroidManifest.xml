@@ -7,6 +7,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <!-- Custom permission that third-party apps must declare to bind to AiModelHubService.
+         protectionLevel="normal" means any app can request it without user approval. -->
+    <permission
+        android:name="com.ai_model_hub.permission.BIND_SERVICE"
+        android:protectionLevel="normal" />
+
     <application
         android:name=".AiModelHubApplication"
         android:icon="@mipmap/ic_launcher"
@@ -36,7 +42,8 @@
         <service
             android:name=".service.AiModelHubService"
             android:exported="true"
-            android:foregroundServiceType="dataSync">
+            android:foregroundServiceType="dataSync"
+            android:permission="com.ai_model_hub.permission.BIND_SERVICE">
             <intent-filter>
                 <action android:name="com.ai_model_hub.service.AiModelHubService" />
             </intent-filter>
