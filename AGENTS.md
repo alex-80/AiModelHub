@@ -1,5 +1,8 @@
 # AiModelHub – Copilot Instructions
 
+# Rules
+- Do not automatically commit code.
+
 ## Build & Run Commands
 
 ```bash
@@ -89,20 +92,11 @@ Route: `chat/{modelName}` — use `Routes.chat(modelName)` helper.
 - `LiteRtLmHelper.initialize()` pre-checks available space and calls `onDone(errorMsg)` instead of crashing if space is insufficient.
 - XNNPack calls `abort()` (uncatchable `SIGABRT`) if cache writes fail — never point the cache at a full partition.
 
-### Model name normalization
-- `Model.normalizedName` is derived automatically in `init {}` by replacing any non-alphanumeric character with `_`. Use this for file-system paths, not the display name.
-
 ### DataStore keys (AppRepository)
 | Key | Type | Purpose |
 |-----|------|---------|
 | `downloaded_models` | `stringSetPreferencesKey` | Set of downloaded model names |
 | `enabled_models` | `stringSetPreferencesKey` | Set of enabled model names |
-
-### WorkManager foreground service
-`AndroidManifest.xml` must override `SystemForegroundService` with `android:foregroundServiceType="dataSync"` (via `tools:node="merge"`) on Android 14+, and `FOREGROUND_SERVICE_DATA_SYNC` permission must be declared. `DownloadWorker.getForegroundInfo()` returns `ForegroundInfo` with `ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC`.
-
-### Adding a new model
-Edit `ModelAllowlist.kt` only — add a new `Model(...)` entry with the correct `url`, `downloadFileName`, `version`, `sizeInBytes`, and `huggingFaceRepo`. No other files need to change.
 
 ## Module Details
 
@@ -112,5 +106,4 @@ Edit `ModelAllowlist.kt` only — add a new `Model(...)` entry with the correct 
 | `:sdk` | `com.ai_model_hub.sdk` | `android.library` only (no Compose, no Hilt) |
 | `:demo` | `com.ai_model_hub.demo` | `android.application`, `kotlin.compose` |
 
-- `compileSdk = 36`, `minSdk = 31`, `targetSdk = 36`, `jvmTarget = JVM_17` across all modules.
 - All dependency versions are managed in `gradle/libs.versions.toml`.
