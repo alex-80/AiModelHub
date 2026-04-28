@@ -21,13 +21,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
-data class ModelUiState(
-    val model: Model,
-    val downloadStatus: ModelDownloadStatus = ModelDownloadStatus(status = ModelDownloadStatusType.NOT_DOWNLOADED),
-    val isDownloaded: Boolean = false,
-    val isEnabled: Boolean = false,
-)
-
 @HiltViewModel
 class ModelManagerViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
