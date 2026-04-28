@@ -62,18 +62,13 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
         _uiState.value = _uiState.value.copy(isLoadingModel = true, errorMessage = "")
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                client.loadModel(model)
-                // Poll briefly — loadModel is async inside the service
-                var attempts = 0
-                while (attempts < 30 && !client.isModelLoaded(model)) {
-                    kotlinx.coroutines.delay(1000)
-                    attempts++
+                client.loadModel(model) { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingModel = false,
+                        isModelLoaded = error.isEmpty(),
+                        errorMessage = error
+                    )
                 }
-                val loaded = client.isModelLoaded(model)
-                _uiState.value = _uiState.value.copy(
-                    isLoadingModel = false, isModelLoaded = loaded,
-                    errorMessage = if (!loaded) "Model did not load in time" else ""
-                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoadingModel = false,

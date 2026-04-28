@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.util.Log
 import com.ai_model_hub.service.IAiModelHubService
 import com.ai_model_hub.service.IAiResponseCallback
+import com.ai_model_hub.service.ILoadModelCallback
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -118,7 +119,21 @@ class AiHubClient(private val context: Context) {
     }
 
     /** Load a model by name (e.g. "Gemma 4 E2B"). Blocking binder call — run on IO thread. */
-    fun loadModel(modelName: String) = requireService().loadModel(modelName)
+    fun loadModel(modelName: String) = loadModel(modelName, onDone = {})
+
+    /**
+     * Load a model by name and receive a callback when loading completes.
+     *
+     * [onDone] is called on the binder thread with an empty string on success, or an error
+     * message on failure. Run this on an IO thread; the callback arrives asynchronously after
+     * [LiteRtLmHelper.initialize] finishes.
+     */
+    fun loadModel(modelName: String, onDone: (error: String) -> Unit) {
+        requireService().loadModel(modelName, object : ILoadModelCallback.Stub() {
+            override fun onSuccess() = onDone("")
+            override fun onError(errorMessage: String) = onDone(errorMessage)
+        })
+    }
 
     /** Unload a previously loaded model. */
     fun unloadModel(modelName: String) = requireService().unloadModel(modelName)

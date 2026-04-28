@@ -4,9 +4,9 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import com.ai_model_hub.runtime.LiteRtLmHelper
 import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.sdk.ModelAllowlist
-import com.ai_model_hub.runtime.LiteRtLmHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,14 +27,16 @@ class AiModelHubService : Service() {
             return _models.keys.toList()
         }
 
-        override fun loadModel(modelName: String) {
+        override fun loadModel(modelName: String, callback: ILoadModelCallback) {
             Log.d(TAG, "loadModel: $modelName")
             val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
                 Log.w(TAG, "Model not found in allowlist: $modelName")
+                callback.onError("Model not found in allowlist: $modelName")
                 return
             }
             if (_models.containsKey(modelName)) {
                 Log.d(TAG, "Model already loaded: $modelName")
+                callback.onSuccess()
                 return
             }
             val model = modelSpec.copy()
@@ -45,8 +47,10 @@ class AiModelHubService : Service() {
                     if (error.isEmpty()) {
                         _models[modelName] = model
                         Log.d(TAG, "Model loaded successfully: $modelName")
+                        callback.onSuccess()
                     } else {
                         Log.e(TAG, "Failed to load model: $error")
+                        callback.onError(error)
                     }
                 }
             )
