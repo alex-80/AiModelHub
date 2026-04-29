@@ -12,6 +12,7 @@ data class Model(
     val version: String = "_",
     val huggingFaceRepo: String = "",
     val maxTokens: Int = 1024,
+    val supportedBackends: List<BackendPreference> = listOf(BackendPreference.CPU),
     var normalizedName: String = "",
     var instance: Any? = null,
     var initializing: Boolean = false,

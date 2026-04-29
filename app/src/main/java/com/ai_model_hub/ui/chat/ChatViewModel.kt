@@ -3,6 +3,7 @@ package com.ai_model_hub.ui.chat
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ai_model_hub.data.AppRepository
 import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.runtime.LiteRtLmHelper
 import com.ai_model_hub.sdk.Model
@@ -11,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +34,7 @@ data class ChatUiState(
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    private val appRepository: AppRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -53,9 +56,11 @@ class ChatViewModel @Inject constructor(
 
         _uiState.value = _uiState.value.copy(isModelLoading = true, modelError = "")
         viewModelScope.launch(Dispatchers.Default) {
+            val backendPreference = appRepository.backendPreference.first()
             LiteRtLmHelper.initialize(
                 context = context,
                 model = model,
+                backendPreference = backendPreference,
                 onDone = { error ->
                     if (error.isEmpty()) {
                         _uiState.value = _uiState.value.copy(isModelLoading = false)

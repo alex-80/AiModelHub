@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.StatFs
 import android.util.Log
 import com.ai_model_hub.data.getModelFilePath
+import com.ai_model_hub.sdk.BackendPreference
 import com.ai_model_hub.sdk.Model
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
@@ -34,6 +35,7 @@ object LiteRtLmHelper {
     fun initialize(
         context: Context,
         model: Model,
+        backendPreference: BackendPreference = BackendPreference.CPU,
         topK: Int = 40,
         topP: Float = 0.95f,
         temperature: Float = 0.8f,
@@ -67,9 +69,11 @@ object LiteRtLmHelper {
         )
 
         try {
+            val useGpu = backendPreference == BackendPreference.GPU &&
+                    BackendPreference.GPU in model.supportedBackends
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.CPU(),
+                backend = if (useGpu) Backend.GPU() else Backend.CPU(),
                 maxNumTokens = model.maxTokens,
                 cacheDir = xnnpackCacheDir.absolutePath,
             )

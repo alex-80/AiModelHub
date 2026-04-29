@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,6 +39,7 @@ import com.ai_model_hub.ui.modelmanager.widget.NotDownloadedCard
 @Composable
 fun ModelManagerScreen(
     onOpenChat: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: ModelManagerViewModel = hiltViewModel(),
 ) {
     val modelStates by viewModel.modelUiStates.collectAsState()
@@ -47,7 +50,7 @@ fun ModelManagerScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        ModelManagerTopBar()
+        ModelManagerTopBar(onOpenSettings = onOpenSettings)
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -87,7 +90,7 @@ fun ModelManagerScreen(
 }
 
 @Composable
-private fun ModelManagerTopBar() {
+private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         tonalElevation = 0.dp,
@@ -97,7 +100,7 @@ private fun ModelManagerTopBar() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -114,6 +117,13 @@ private fun ModelManagerTopBar() {
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f),
                 )
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         }

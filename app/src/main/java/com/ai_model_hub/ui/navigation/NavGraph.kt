@@ -26,11 +26,13 @@ import androidx.navigation.compose.rememberNavController
 import com.ai_model_hub.ui.chat.ChatEmptyScreen
 import com.ai_model_hub.ui.chat.ChatScreen
 import com.ai_model_hub.ui.modelmanager.ModelManagerScreen
+import com.ai_model_hub.ui.settings.SettingsScreen
 
 object Routes {
     const val MODEL_MANAGER = "model_manager"
     const val CHAT_EMPTY = "chat"
     const val CHAT = "chat/{modelName}"
+    const val SETTINGS = "settings"
     fun chat(modelName: String) = "chat/$modelName"
 }
 
@@ -115,7 +117,10 @@ fun AiModelHubNavGraph() {
                     onOpenChat = { modelName ->
                         currentChatModel = modelName
                         navController.navigate(Routes.chat(modelName))
-                    }
+                    },
+                    onOpenSettings = {
+                        navController.navigate(Routes.SETTINGS)
+                    },
                 )
             }
             composable(Routes.CHAT) { backStackEntry ->
@@ -125,6 +130,9 @@ fun AiModelHubNavGraph() {
                     modelName = modelName,
                     onBack = { navController.popBackStack() },
                 )
+            }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(onBack = { navController.popBackStack() })
             }
         }
     }
