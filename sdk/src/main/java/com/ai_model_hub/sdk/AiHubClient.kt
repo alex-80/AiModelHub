@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import com.ai_model_hub.service.IAiModelHubService
 import com.ai_model_hub.service.IAiResponseCallback
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.callbackFlow
 private const val HOST_PACKAGE = "com.ai_model_hub"
 private const val SERVICE_CLASS = "com.ai_model_hub.service.AiModelHubService"
 private const val TAG = "AiHubClient"
+private val RETRY_DELAYS_MS = longArrayOf(1_000L, 2_000L, 4_000L)
 
 /**
  * SDK entry point for binding to AiModelHub service.
@@ -41,8 +44,12 @@ class AiHubClient(private val context: Context) {
     /** Observe binding state changes. */
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
+    private val handler = Handler(Looper.getMainLooper())
+    private var retryAttempt = 0
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            retryAttempt = 0
             val service = IAiModelHubService.Stub.asInterface(binder)
             _connectionState.value = ConnectionState.Connected(service)
         }
@@ -64,6 +71,11 @@ class AiHubClient(private val context: Context) {
     /** Bind to AiModelHub service. Safe to call multiple times. */
     fun connect() {
         if (_connectionState.value !is ConnectionState.Disconnected) return
+        retryAttempt = 0
+        attemptBind()
+    }
+
+    private fun attemptBind() {
         _connectionState.value = ConnectionState.Connecting
         val intent = Intent().apply {
             component = ComponentName(HOST_PACKAGE, SERVICE_CLASS)
@@ -96,13 +108,23 @@ class AiHubClient(private val context: Context) {
                         "On some devices check whether app isolation or battery optimization " +
                         "is blocking cross-app IPC for package: $HOST_PACKAGE."
             }
-            Log.w(TAG, reason)
-            _connectionState.value = ConnectionState.Error(reason)
+
+            if (retryAttempt < RETRY_DELAYS_MS.size) {
+                val delayMs = RETRY_DELAYS_MS[retryAttempt]
+                Log.w(TAG, "$reason Retry ${retryAttempt + 1}/${RETRY_DELAYS_MS.size} in ${delayMs}ms.")
+                retryAttempt++
+                handler.postDelayed({ attemptBind() }, delayMs)
+            } else {
+                Log.w(TAG, reason)
+                _connectionState.value = ConnectionState.Error(reason)
+            }
         }
     }
 
     /** Unbind from the service. */
     fun disconnect() {
+        handler.removeCallbacksAndMessages(null)
+        retryAttempt = 0
         if (_connectionState.value is ConnectionState.Disconnected) return
         try {
             context.unbindService(serviceConnection)

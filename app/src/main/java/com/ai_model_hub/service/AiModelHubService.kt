@@ -2,6 +2,8 @@ package com.ai_model_hub.service
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.ai_model_hub.runtime.LiteRtLmHelper
@@ -105,7 +107,42 @@ class AiModelHubService : Service() {
         }
     }
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    /**
+     * Promote to a foreground service when started (via startForegroundService).
+     * START_STICKY ensures the system restarts the service if it is killed, keeping
+     * the process alive so cross-app bindService() calls never need a cold-start.
+     */
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        promoteToForeground()
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        // Also promote when a client binds directly (e.g. first launch before
+        // startForegroundService has been called).
+        promoteToForeground()
+        return binder
+    }
+
+    /**
+     * Return true so onRebind() is called when new clients bind after all previous
+     * clients have unbound. The service intentionally stays running (foreground) even
+     * after all clients disconnect — this keeps the process alive for the next bind.
+     */
+    override fun onUnbind(intent: Intent?): Boolean = true
+
+    private fun promoteToForeground() {
+        createServiceNotificationChannel(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                SERVICE_NOTIFICATION_ID,
+                buildServiceNotification(this),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(SERVICE_NOTIFICATION_ID, buildServiceNotification(this))
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
