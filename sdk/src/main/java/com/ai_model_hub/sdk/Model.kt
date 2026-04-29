@@ -11,6 +11,7 @@ data class Model(
     val downloadFileName: String = "_",
     val version: String = "_",
     val huggingFaceRepo: String = "",
+    val maxTokens: Int = 1024,
     var normalizedName: String = "",
     var instance: Any? = null,
     var initializing: Boolean = false,

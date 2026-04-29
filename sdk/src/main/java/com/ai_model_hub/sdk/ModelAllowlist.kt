@@ -11,6 +11,7 @@ object ModelAllowlist {
             downloadFileName = "gemma-4-E2B-it.litertlm",
             version = "main",
             huggingFaceRepo = "litert-community/gemma-4-E2B-it-litert-lm",
+            maxTokens = 4000,
         ),
         Model(
             name = ModelName.GEMMA_4_E4B,
@@ -21,6 +22,7 @@ object ModelAllowlist {
             downloadFileName = "gemma-4-E4B-it.litertlm",
             version = "main",
             huggingFaceRepo = "litert-community/gemma-4-E4B-it-litert-lm",
+            maxTokens = 4000,
         ),
     )
 

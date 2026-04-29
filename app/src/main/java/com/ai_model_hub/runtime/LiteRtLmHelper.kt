@@ -34,7 +34,6 @@ object LiteRtLmHelper {
     fun initialize(
         context: Context,
         model: Model,
-        maxTokens: Int = 1024,
         topK: Int = 40,
         topP: Float = 0.95f,
         temperature: Float = 0.8f,
@@ -71,7 +70,7 @@ object LiteRtLmHelper {
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = Backend.CPU(),
-                maxNumTokens = maxTokens,
+                maxNumTokens = model.maxTokens,
                 cacheDir = xnnpackCacheDir.absolutePath,
             )
             val engine = Engine(engineConfig)
