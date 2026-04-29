@@ -112,7 +112,7 @@ private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = "AI Model Hub",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f),
