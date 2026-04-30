@@ -182,23 +182,9 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 > 将 `0.1.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
 
-### 3. 在 AndroidManifest.xml 中声明权限和查询
+> SDK 的 `AndroidManifest.xml` 中已声明所需的 `<uses-permission>` 和 `<queries>` 条目。Android 的 Manifest Merger 会在构建时自动将其合并到您的 App 中，无需手动添加任何 manifest 配置。
 
-```xml
-<!-- 绑定 AiModelHubService 所需权限 -->
-<uses-permission android:name="com.ai_model_hub.permission.BIND_SERVICE" />
-
-<queries>
-    <package android:name="com.ai_model_hub" />
-    <!-- 同时声明服务 action，确保在 OEM 定制 ROM 上
-         bindService 的包可见性检查能顺利通过。-->
-    <intent>
-        <action android:name="com.ai_model_hub.service.AiModelHubService" />
-    </intent>
-</queries>
-```
-
-### 4. 使用 `AiHubClient`
+### 3. 使用 `AiHubClient`
 
 ```kotlin
 class MyViewModel(app: Application) : AndroidViewModel(app) {

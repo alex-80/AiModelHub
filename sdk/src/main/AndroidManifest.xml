@@ -1,1 +1,18 @@
-<manifest />
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Automatically merged into any app that depends on :sdk, so third-party consumers
+         do not need to declare these entries manually. -->
+
+    <uses-permission android:name="com.ai_model_hub.permission.BIND_SERVICE" />
+
+    <queries>
+        <package android:name="com.ai_model_hub" />
+        <!-- Required on some OEM ROMs that need an explicit <intent> query in addition
+             to <package> for bindService visibility checks to pass. -->
+        <intent>
+            <action android:name="com.ai_model_hub.service.AiModelHubService" />
+        </intent>
+    </queries>
+
+</manifest>
