@@ -16,9 +16,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.ai_model_hub.sdk.BackendPreference
+import com.ai_model_hub.ui.settings.widget.BackendPreferenceSection
 
 @Composable
 fun SettingsScreen(
@@ -86,50 +83,3 @@ private fun SettingsTopBar(onBack: () -> Unit) {
     }
 }
 
-@Composable
-private fun BackendPreferenceSection(
-    selected: BackendPreference,
-    onSelect: (BackendPreference) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        Text(
-            text = "Inference Backend",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = "Choose the preferred compute backend for model inference. " +
-                    "Takes effect the next time a model is loaded. " +
-                    "GPU is only used when the model declares GPU support.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
-        Spacer(Modifier.height(12.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            BackendPreference.entries.forEachIndexed { index, pref ->
-                SegmentedButton(
-                    selected = selected == pref,
-                    onClick = { onSelect(pref) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = BackendPreference.entries.size,
-                    ),
-                    label = {
-                        Text(
-                            text = when (pref) {
-                                BackendPreference.CPU -> "CPU"
-                                BackendPreference.GPU -> "GPU"
-                            }
-                        )
-                    },
-                )
-            }
-        }
-    }
-}
