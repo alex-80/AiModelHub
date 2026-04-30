@@ -1,5 +1,7 @@
 package com.ai_model_hub.ui.navigation
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -34,6 +36,12 @@ object Routes {
     const val CHAT = "chat/{modelName}"
     const val SETTINGS = "settings"
     fun chat(modelName: String) = "chat/$modelName"
+}
+
+private fun routeToTabIndex(route: String?): Int? = when {
+    route == Routes.MODEL_MANAGER -> 0
+    route?.startsWith("chat") == true -> 1
+    else -> null
 }
 
 @Composable
@@ -100,6 +108,26 @@ fun AiModelHubNavGraph() {
             modifier = Modifier
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues),
+            enterTransition = {
+                val fromIndex = routeToTabIndex(initialState.destination.route)
+                val toIndex = routeToTabIndex(targetState.destination.route)
+                if (fromIndex != null && toIndex != null) {
+                    if (toIndex < fromIndex) slideInHorizontally { -it } else slideInHorizontally { it }
+                } else {
+                    slideInHorizontally { it }
+                }
+            },
+            exitTransition = {
+                val fromIndex = routeToTabIndex(initialState.destination.route)
+                val toIndex = routeToTabIndex(targetState.destination.route)
+                if (fromIndex != null && toIndex != null) {
+                    if (toIndex < fromIndex) slideOutHorizontally { it } else slideOutHorizontally { -it }
+                } else {
+                    slideOutHorizontally { -it }
+                }
+            },
+            popEnterTransition = { slideInHorizontally { -it } },
+            popExitTransition = { slideOutHorizontally { it } },
         ) {
             composable(Routes.CHAT_EMPTY) {
                 ChatEmptyScreen(
