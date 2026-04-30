@@ -21,6 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AiManager">
 
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -48,6 +49,9 @@
                 <action android:name="com.ai_model_hub.service.AiModelHubService" />
             </intent-filter>
         </service>
+
+        <uses-native-library android:name="libOpenCL.so" android:required="false"/>                                                                                                                                                                                                                                                                                            │
+        <uses-native-library android:name="libvndksupport.so" android:required="false"/>
 
     </application>
 
