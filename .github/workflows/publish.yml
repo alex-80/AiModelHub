@@ -6,7 +6,37 @@ on:
       - 'v*.*.*'
 
 jobs:
+  check-sdk-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      sdk_changed: ${{ steps.check.outputs.sdk_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if sdk/ has changes since last tag
+        id: check
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, treating sdk as changed."
+            echo "sdk_changed=true" >> $GITHUB_OUTPUT
+          else
+            CHANGED=$(git diff --name-only "$PREV_TAG" "$GITHUB_REF_NAME" -- sdk/ | head -1)
+            if [ -n "$CHANGED" ]; then
+              echo "sdk/ has changes since $PREV_TAG"
+              echo "sdk_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "sdk/ has no changes since $PREV_TAG, skipping publish."
+              echo "sdk_changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
   publish:
+    needs: check-sdk-changes
+    if: needs.check-sdk-changes.outputs.sdk_changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
