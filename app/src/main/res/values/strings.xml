@@ -1,7 +1,71 @@
 <resources>
+    <!-- App name -->
     <string name="app_name">AI Model Hub</string>
+
+    <!-- Navigation -->
+    <string name="nav_models">Models</string>
+    <string name="nav_chat">Chat</string>
+
+    <!-- Model Manager Screen -->
+    <string name="settings">Settings</string>
+    <string name="installed_models">Installed Models</string>
+    <plurals name="models_active">
+        <item quantity="one">%1$d Model Active</item>
+        <item quantity="other">%1$d Models Active</item>
+    </plurals>
+
+    <!-- Model cards -->
+    <string name="model_enabled">Enabled</string>
+    <string name="model_disabled">Disabled</string>
+
+    <!-- Common actions -->
+    <string name="action_chat">Chat</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_download">Download</string>
+    <string name="action_cancel_download">Cancel Download</string>
+    <string name="action_back">Back</string>
+    <string name="action_attach">Attach</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_send">Send</string>
+    <string name="action_clear_session">Clear session</string>
+
+    <!-- Error -->
+    <string name="error_message">Error: %1$s</string>
+
+    <!-- Settings Screen -->
+    <string name="inference_backend">Inference Backend</string>
+    <string name="backend_cpu">CPU</string>
+    <string name="backend_gpu">GPU</string>
+    <string name="inference_backend_description">Choose the preferred compute backend for model inference. Takes effect the next time a model is loaded. GPU is only used when the model declares GPU support.</string>
+    <string name="language">Language</string>
+    <string name="language_description">Choose the display language for the app. Takes effect immediately.</string>
+    <string name="language_system">System</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+
+    <!-- Chat Screen -->
+    <string name="powered_by_litert">Powered by LiteRT</string>
+    <string name="loading_model">Loading model…</string>
+    <string name="start_conversation">Start a conversation!</string>
+    <string name="today">Today</string>
+    <string name="role_assistant">Assistant</string>
+    <string name="role_you">You</string>
+    <string name="type_message_hint">Type a message…</string>
+    <string name="select_a_model">Select a Model</string>
+    <string name="no_models_enabled">No models enabled.\nGo to the Models tab to download and enable a model.</string>
+    <string name="choose_model_to_chat">Choose a model to start chatting</string>
+
+    <!-- Notifications: Download Worker -->
     <string name="notification_channel_download">Model Download</string>
+    <string name="notification_channel_download_description">Notifications for model downloading</string>
     <string name="notification_download_title">Downloading model</string>
+    <string name="notification_download_in_progress">Downloading \"%1$s\"</string>
+    <string name="notification_download_progress">%1$d%%</string>
     <string name="notification_download_success">Model downloaded successfully</string>
     <string name="notification_download_failed">Model download failed</string>
+
+    <!-- Notifications: Background Service -->
+    <string name="service_notification_channel_name">AI Model Hub Service</string>
+    <string name="service_notification_channel_description">Keeps the AI inference service running in the background</string>
+    <string name="service_notification_content">Ready for AI inference</string>
 </resources>

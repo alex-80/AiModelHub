@@ -28,9 +28,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.ai_model_hub.R
 import com.ai_model_hub.data.ModelDownloadStatusType
 import com.ai_model_hub.ui.modelmanager.widget.DownloadedCard
 import com.ai_model_hub.ui.modelmanager.widget.DownloadingCard
@@ -63,13 +66,13 @@ fun ModelManagerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Installed Models",
+                        text = stringResource(R.string.installed_models),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = "$enabledCount Models Active",
+                        text = pluralStringResource(R.plurals.models_active, count =  enabledCount, enabledCount),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -111,7 +114,7 @@ private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "AI Model Hub",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -120,7 +123,7 @@ private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.settings),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

@@ -28,9 +28,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ai_model_hub.R
 import com.ai_model_hub.extension.formatFileSize
 import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.ui.modelmanager.ModelUiState
@@ -131,7 +133,7 @@ fun DownloadedCard(
                         else MaterialTheme.colorScheme.outline,
                     )
                     Text(
-                        text = if (isEnabled) "Enabled" else "Disabled",
+                        text = if (isEnabled) stringResource(R.string.model_enabled) else stringResource(R.string.model_disabled),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isEnabled) MaterialTheme.colorScheme.primary
@@ -149,7 +151,7 @@ fun DownloadedCard(
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
                         ) {
                             Text(
-                                text = "Chat",
+                                text = stringResource(R.string.action_chat),
                                 style = MaterialTheme.typography.labelMedium,
                             )
                         }
@@ -160,7 +162,7 @@ fun DownloadedCard(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Delete,
-                            contentDescription = "Delete",
+                            contentDescription = stringResource(R.string.action_delete),
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.outline,
                         )

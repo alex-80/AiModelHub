@@ -21,10 +21,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ai_model_hub.R
 import com.ai_model_hub.ui.chat.ChatEmptyScreen
 import com.ai_model_hub.ui.chat.ChatScreen
 import com.ai_model_hub.ui.modelmanager.ModelManagerScreen
@@ -65,8 +67,8 @@ fun AiModelHubNavGraph() {
                             launchSingleTop = true
                         }
                     },
-                    icon = { Icon(Icons.Filled.Memory, contentDescription = "Models") },
-                    label = { Text("Models") },
+                    icon = { Icon(Icons.Filled.Memory, contentDescription = stringResource(R.string.nav_models)) },
+                    label = { Text(stringResource(R.string.nav_models)) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -89,8 +91,8 @@ fun AiModelHubNavGraph() {
                             }
                         }
                     },
-                    icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Chat") },
-                    label = { Text("Chat") },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = stringResource(R.string.nav_chat)) },
+                    label = { Text(stringResource(R.string.nav_chat)) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,

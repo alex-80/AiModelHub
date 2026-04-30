@@ -29,9 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ai_model_hub.R
 import com.ai_model_hub.extension.formatFileSize
 import com.ai_model_hub.sdk.Model
 import kotlin.text.ifEmpty
@@ -96,7 +98,7 @@ fun NotDownloadedCard(
             }
             if (errorMessage != null) {
                 Text(
-                    text = "Error: $errorMessage",
+                    text = stringResource(R.string.error_message, errorMessage),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -120,7 +122,7 @@ fun NotDownloadedCard(
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp),
                     )
-                    Text(text = "Download")
+                    Text(text = stringResource(R.string.action_download))
                 }
             }
         }
