@@ -75,6 +75,24 @@ class AiHubClient(private val context: Context) {
         attemptBind()
     }
 
+    fun isServiceAlive(): Boolean {
+        val pm = context.packageManager
+        return try {
+            pm.getApplicationInfo(HOST_PACKAGE, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
+    fun isServiceResolvable(): Boolean {
+        val intent = Intent().apply {
+            component = ComponentName(HOST_PACKAGE, SERVICE_CLASS)
+        }
+        val pm = context.packageManager
+        return pm.resolveService(intent, 0) != null
+    }
+
     private fun attemptBind() {
         _connectionState.value = ConnectionState.Connecting
         val intent = Intent().apply {
@@ -84,15 +102,12 @@ class AiHubClient(private val context: Context) {
         // Diagnose package visibility and service resolvability before binding.
         // This helps pinpoint the root cause on OEM ROMs that
         // apply additional inter-process binding restrictions.
-        val pm = context.packageManager
-        val isPackageVisible = try {
-            pm.getApplicationInfo(HOST_PACKAGE, 0)
-            true
-        } catch (_: PackageManager.NameNotFoundException) {
-            false
-        }
-        val isServiceResolvable = pm.resolveService(intent, 0) != null
-        Log.d(TAG, "connect: packageVisible=$isPackageVisible, serviceResolvable=$isServiceResolvable")
+        val isPackageVisible = isServiceAlive()
+        val isServiceResolvable = isServiceResolvable()
+        Log.d(
+            TAG,
+            "connect: packageVisible=$isPackageVisible, serviceResolvable=$isServiceResolvable"
+        )
 
         val bound = context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         if (!bound) {
