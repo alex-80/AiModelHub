@@ -75,7 +75,7 @@ class AiHubClient(private val context: Context) {
         attemptBind()
     }
 
-    fun isServiceAlive(): Boolean {
+    fun isServiceAvailable(): Boolean {
         val pm = context.packageManager
         return try {
             pm.getApplicationInfo(HOST_PACKAGE, 0)
@@ -102,7 +102,7 @@ class AiHubClient(private val context: Context) {
         // Diagnose package visibility and service resolvability before binding.
         // This helps pinpoint the root cause on OEM ROMs that
         // apply additional inter-process binding restrictions.
-        val isPackageVisible = isServiceAlive()
+        val isPackageVisible = isServiceAvailable()
         val isServiceResolvable = isServiceResolvable()
         Log.d(
             TAG,
