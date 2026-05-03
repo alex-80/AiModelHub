@@ -13,6 +13,7 @@ import androidx.work.Data
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.ai_model_hub.MainActivity
+import com.ai_model_hub.R
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_ERROR_MESSAGE
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_FILE_NAME
 import com.ai_model_hub.data.KEY_MODEL_DOWNLOAD_MODEL_DIR
@@ -44,8 +45,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
 
     init {
         val channel = NotificationChannel(
-            CHANNEL_ID, "Model Downloading", NotificationManager.IMPORTANCE_LOW
-        ).apply { description = "Notifications for model downloading" }
+            CHANNEL_ID,
+            applicationContext.getString(R.string.notification_channel_download),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = applicationContext.getString(R.string.notification_channel_download_description)
+        }
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -145,7 +150,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
     override suspend fun getForegroundInfo(): ForegroundInfo = createForegroundInfo(0)
 
     private fun createForegroundInfo(progress: Int, modelName: String? = null): ForegroundInfo {
-        val title = if (modelName != null) "Downloading \"$modelName\"" else "Downloading model"
+        val title = if (modelName != null)
+            applicationContext.getString(R.string.notification_download_in_progress, modelName)
+        else
+            applicationContext.getString(R.string.notification_download_title)
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -155,7 +163,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         )
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText("$progress%")
+            .setContentText(applicationContext.getString(R.string.notification_download_progress, progress))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .setProgress(100, progress, false)

@@ -17,9 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ai_model_hub.R
 import com.ai_model_hub.sdk.BackendPreference
 
 @Composable
@@ -38,7 +40,7 @@ internal fun BackendPreferenceSection(
 
             ) {
             Text(
-                text = "Inference Backend",
+                text = stringResource(R.string.inference_backend),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -58,8 +60,8 @@ internal fun BackendPreferenceSection(
                         label = {
                             Text(
                                 text = when (pref) {
-                                    BackendPreference.CPU -> "CPU"
-                                    BackendPreference.GPU -> "GPU"
+                                    BackendPreference.CPU -> stringResource(R.string.backend_cpu)
+                                    BackendPreference.GPU -> stringResource(R.string.backend_gpu)
                                 },
                                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             )
@@ -71,9 +73,7 @@ internal fun BackendPreferenceSection(
 
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Choose the preferred compute backend for model inference. " +
-                    "Takes effect the next time a model is loaded. " +
-                    "GPU is only used when the model declares GPU support.",
+            text = stringResource(R.string.inference_backend_description),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
         )

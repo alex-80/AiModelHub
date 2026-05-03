@@ -18,10 +18,10 @@ internal fun createServiceNotificationChannel(context: Context) {
     if (manager.getNotificationChannel(CHANNEL_ID) != null) return
     val channel = NotificationChannel(
         CHANNEL_ID,
-        "AI Model Hub Service",
+        context.getString(R.string.service_notification_channel_name),
         NotificationManager.IMPORTANCE_LOW
     ).apply {
-        description = "Keeps the AI inference service running in the background"
+        description = context.getString(R.string.service_notification_channel_description)
         setShowBadge(false)
     }
     manager.createNotificationChannel(channel)
@@ -34,8 +34,8 @@ internal fun buildServiceNotification(context: Context): Notification {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
     return NotificationCompat.Builder(context, CHANNEL_ID)
-        .setContentTitle("AI Model Hub")
-        .setContentText("Ready for AI inference")
+        .setContentTitle(context.getString(R.string.app_name))
+        .setContentText(context.getString(R.string.service_notification_content))
         .setSmallIcon(R.mipmap.ic_launcher)
         .setContentIntent(tapIntent)
         .setOngoing(true)

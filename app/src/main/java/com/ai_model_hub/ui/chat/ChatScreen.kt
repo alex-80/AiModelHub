@@ -46,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.ai_model_hub.R
 import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.ui.modelmanager.ModelManagerViewModel
 import java.text.SimpleDateFormat
@@ -144,7 +146,7 @@ private fun ChatTopBar(modelName: String, onClearSession: () -> Unit) {
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Powered by LiteRT",
+                        text = stringResource(R.string.powered_by_litert),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -152,7 +154,7 @@ private fun ChatTopBar(modelName: String, onClearSession: () -> Unit) {
                 IconButton(onClick = onClearSession) {
                     Icon(
                         Icons.Filled.Clear,
-                        contentDescription = "Clear session",
+                        contentDescription = stringResource(R.string.action_clear_session),
                         tint = MaterialTheme.colorScheme.outline
                     )
                 }
@@ -171,7 +173,7 @@ private fun LoadingContent() {
     ) {
         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(16.dp))
-        Text("Loading model…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.loading_model), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -179,7 +181,7 @@ private fun LoadingContent() {
 private fun ErrorContent(error: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = "Error: $error",
+            text = stringResource(R.string.error_message, error),
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(16.dp),
         )
@@ -204,7 +206,7 @@ private fun MessagesContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Start a conversation!",
+                        text = stringResource(R.string.start_conversation),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge,
                     )
@@ -212,7 +214,7 @@ private fun MessagesContent(
             }
         } else {
             item {
-                DateDivider(label = "Today")
+                DateDivider(label = stringResource(R.string.today))
             }
             items(uiState.messages) { msg ->
                 ChatBubble(message = msg)
@@ -257,7 +259,7 @@ private fun ChatBubble(message: ChatMessage) {
         ) {
             if (!isUser) {
                 Text(
-                    text = "Assistant",
+                    text = stringResource(R.string.role_assistant),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -266,7 +268,7 @@ private fun ChatBubble(message: ChatMessage) {
             } else {
                 Text(text = timeStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.outline)
                 Text(
-                    text = "You",
+                    text = stringResource(R.string.role_you),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -362,7 +364,7 @@ fun ChatEmptyScreen(
                     )
                     Spacer(Modifier.size(10.dp))
                     Text(
-                        text = "Select a Model",
+                        text = stringResource(R.string.select_a_model),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -375,7 +377,7 @@ fun ChatEmptyScreen(
         if (enabledModels.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "No models enabled.\nGo to the Models tab to download and enable a model.",
+                    text = stringResource(R.string.no_models_enabled),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(32.dp),
@@ -390,7 +392,7 @@ fun ChatEmptyScreen(
             ) {
                 item {
                     Text(
-                        text = "Choose a model to start chatting",
+                        text = stringResource(R.string.choose_model_to_chat),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(bottom = 4.dp),
@@ -481,7 +483,7 @@ private fun ChatInputBar(
             IconButton(onClick = {}) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Attach",
+                    contentDescription = stringResource(R.string.action_attach),
                     tint = MaterialTheme.colorScheme.outline,
                 )
             }
@@ -493,7 +495,7 @@ private fun ChatInputBar(
             ) {
                 if (input.isEmpty()) {
                     Text(
-                        text = "Type a message…",
+                        text = stringResource(R.string.type_message_hint),
                         color = MaterialTheme.colorScheme.outline,
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -521,7 +523,7 @@ private fun ChatInputBar(
                         IconButton(onClick = onStop) {
                             Icon(
                                 Icons.Filled.Stop,
-                                contentDescription = "Stop",
+                                contentDescription = stringResource(R.string.action_stop),
                                 tint = MaterialTheme.colorScheme.onError
                             )
                         }
@@ -542,7 +544,7 @@ private fun ChatInputBar(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Send",
+                                contentDescription = stringResource(R.string.action_send),
                                 tint = if (input.isNotBlank()) MaterialTheme.colorScheme.onPrimary
                                 else MaterialTheme.colorScheme.outline,
                             )
