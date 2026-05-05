@@ -37,7 +37,8 @@ private val RETRY_DELAYS_MS = longArrayOf(1_000L, 2_000L, 4_000L)
  * client.disconnect()
  * ```
  */
-class AiHubClient(private val context: Context) {
+class AiHubClient {
+    private val context: Context by lazy { AiHubContext.context }
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
 

@@ -15,4 +15,11 @@
         </intent>
     </queries>
 
+    <application>
+        <provider
+            android:name="com.ai_model_hub.sdk.AiHubInitializer"
+            android:authorities="${applicationId}.aihub_init"
+            android:exported="false" />
+    </application>
+
 </manifest>

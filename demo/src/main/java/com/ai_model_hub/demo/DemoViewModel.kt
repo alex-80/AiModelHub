@@ -27,7 +27,7 @@ val MODELS = ModelAllowlist.models.map { it.name }
 
 class DemoViewModel(app: Application) : AndroidViewModel(app) {
 
-    val client = AiHubClient(app.applicationContext)
+    val client = AiHubClient()
 
     private val _uiState = MutableStateFlow(DemoUiState())
     val uiState: StateFlow<DemoUiState> = _uiState.asStateFlow()
