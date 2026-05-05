@@ -1,6 +1,12 @@
 package com.ai_model_hub.demo
 
+import android.content.Intent
 import android.os.Bundle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -109,6 +115,23 @@ fun DemoScreen(vm: DemoViewModel = viewModel()) {
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // ── Feature navigation ────────────────────────────────────
+            HorizontalDivider()
+            val context = LocalContext.current
+            FilledTonalButton(
+                onClick = { context.startActivity(Intent(context, TranslateActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Translation Demo")
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
 
             Spacer(Modifier.height(8.dp))
