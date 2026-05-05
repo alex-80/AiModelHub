@@ -5,7 +5,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="AiHub Demo"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AiHubDemo">
         <activity
             android:name=".MainActivity"
             android:exported="true"

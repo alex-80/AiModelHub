@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ai_model_hub.demo.ui.theme.AiHubDemoTheme
 import com.ai_model_hub.sdk.functional.TranslateAvailableLanguage
 
 class TranslateActivity : ComponentActivity() {
@@ -51,7 +52,7 @@ class TranslateActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            AiHubDemoTheme {
                 TranslateScreen(onNavigateUp = { finish() })
             }
         }
@@ -138,7 +139,12 @@ fun TranslateScreen(
                 ) { Text("Translate") }
                 if (state.isTranslating) {
                     OutlinedButton(onClick = vm::stopTranslation) { Text("Stop") }
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp).align(Alignment.CenterVertically), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.CenterVertically),
+                        strokeWidth = 2.dp
+                    )
                 }
             }
 
