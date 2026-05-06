@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
-import com.ai_model_hub.sdk.ModelAllowlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,16 +13,16 @@ import kotlinx.coroutines.launch
 
 data class DemoUiState(
     val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val selectedModel: String = MODELS.first(),
+    val selectedModel: String = "",
+    val sessionId: String = "",
     val isModelLoaded: Boolean = false,
     val isLoadingModel: Boolean = false,
     val inputText: String = "",
     val response: String = "",
     val isGenerating: Boolean = false,
     val errorMessage: String = "",
+    val availableModels: List<String> = emptyList(),
 )
-
-val MODELS = ModelAllowlist.models.map { it.name }
 
 class DemoViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -35,11 +34,21 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             client.connectionState.collect { state ->
+                val availableModels = if (state is ConnectionState.Connected) {
+                    try {
+                        client.getAvailableModels()
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                } else emptyList()
+
                 _uiState.value = _uiState.value.copy(
                     connectionState = state,
                     errorMessage = if (state is ConnectionState.Error) state.message else "",
                     isModelLoaded = if (state !is ConnectionState.Connected) false
                     else _uiState.value.isModelLoaded,
+                    availableModels = availableModels,
+                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) "" else availableModels.first(),
                 )
             }
         }
@@ -49,40 +58,47 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
 
     fun disconnect() {
         client.disconnect()
-        _uiState.value = _uiState.value.copy(isModelLoaded = false, response = "")
+        _uiState.value = _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
     }
 
     fun selectModel(name: String) {
         _uiState.value =
-            _uiState.value.copy(selectedModel = name, isModelLoaded = false, response = "")
+            _uiState.value.copy(
+                selectedModel = name,
+                sessionId = "",
+                isModelLoaded = false,
+                response = ""
+            )
     }
 
-    fun loadModel() {
+    fun createSession() {
         val model = _uiState.value.selectedModel
         _uiState.value = _uiState.value.copy(isLoadingModel = true, errorMessage = "")
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                client.loadModel(model) { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoadingModel = false,
-                        isModelLoaded = error.isEmpty(),
-                        errorMessage = error
-                    )
-                }
+                val sessionId = client.createSession(modelName = model)
+                _uiState.value = _uiState.value.copy(
+                    isLoadingModel = false,
+                    isModelLoaded = true,
+                    sessionId = sessionId,
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoadingModel = false,
+                    isModelLoaded = false,
                     errorMessage = e.message ?: "Load failed"
                 )
             }
         }
     }
 
-    fun unloadModel() {
+    fun closeSession() {
+        val sessionId = _uiState.value.sessionId
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                client.unloadModel(_uiState.value.selectedModel)
-                _uiState.value = _uiState.value.copy(isModelLoaded = false, response = "")
+                client.closeSession(sessionId)
+                _uiState.value =
+                    _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unload failed")
             }
@@ -94,7 +110,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun sendMessage() {
-        val model = _uiState.value.selectedModel
+        val sessionId = _uiState.value.sessionId
         val message = _uiState.value.inputText.trim()
         if (message.isBlank()) return
         _uiState.value = _uiState.value.copy(
@@ -105,7 +121,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
         )
         viewModelScope.launch {
             try {
-                client.sendMessage(model, message).collect { token ->
+                client.sendMessage(sessionId, message).collect { token ->
                     _uiState.value = _uiState.value.copy(response = _uiState.value.response + token)
                 }
                 _uiState.value = _uiState.value.copy(isGenerating = false)
@@ -119,7 +135,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun stopGeneration() {
-        client.stopGeneration(_uiState.value.selectedModel)
+        client.stopGeneration(_uiState.value.sessionId)
         _uiState.value = _uiState.value.copy(isGenerating = false)
     }
 

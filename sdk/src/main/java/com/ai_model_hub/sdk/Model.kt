@@ -14,7 +14,6 @@ data class Model(
     val maxTokens: Int = 1024,
     val supportedBackends: List<BackendPreference> = listOf(BackendPreference.CPU),
     var normalizedName: String = "",
-    var instance: Any? = null,
     var initializing: Boolean = false,
     var configValues: Map<String, Any> = mapOf(),
 ) {

@@ -11,13 +11,16 @@ import android.os.Looper
 import android.util.Log
 import com.ai_model_hub.service.IAiModelHubService
 import com.ai_model_hub.service.IAiResponseCallback
-import com.ai_model_hub.service.ILoadModelCallback
+import com.ai_model_hub.service.ICreateSessionCallback
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 private const val HOST_PACKAGE = "com.ai_model_hub"
 private const val SERVICE_CLASS = "com.ai_model_hub.service.AiModelHubService"
@@ -29,11 +32,11 @@ private val RETRY_DELAYS_MS = longArrayOf(1_000L, 2_000L, 4_000L)
  *
  * Usage:
  * ```
- * val client = AiHubClient(context)
+ * val client = AiHubClient()
  * client.connect()
  * // observe connectionState until Connected
- * client.loadModel("Gemma 4 E2B")
- * client.sendMessage("Gemma 4 E2B", "Hello").collect { token -> ... }
+ * val sessionId = client.createSession("Gemma 4 E2B")
+ * client.sendMessage(sessionId, "Hello").collect { token -> ... }
  * client.disconnect()
  * ```
  */
@@ -115,19 +118,24 @@ class AiHubClient {
             val reason = when {
                 !isPackageVisible ->
                     "bindService failed — AiModelHub (package: $HOST_PACKAGE) is not visible to this app. " +
-                        "Ensure <queries><package android:name=\"$HOST_PACKAGE\"/></queries> is declared in your manifest."
+                            "Ensure <queries><package android:name=\"$HOST_PACKAGE\"/></queries> is declared in your manifest."
+
                 !isServiceResolvable ->
                     "bindService failed — AiModelHub is installed but the service could not be resolved. " +
-                        "The app may not be running or the service is disabled."
+                            "The app may not be running or the service is disabled."
+
                 else ->
                     "bindService failed — AiModelHub is installed and visible, but the system refused the binding. " +
-                        "On some devices check whether app isolation or battery optimization " +
-                        "is blocking cross-app IPC for package: $HOST_PACKAGE."
+                            "On some devices check whether app isolation or battery optimization " +
+                            "is blocking cross-app IPC for package: $HOST_PACKAGE."
             }
 
             if (retryAttempt < RETRY_DELAYS_MS.size) {
                 val delayMs = RETRY_DELAYS_MS[retryAttempt]
-                Log.w(TAG, "$reason Retry ${retryAttempt + 1}/${RETRY_DELAYS_MS.size} in ${delayMs}ms.")
+                Log.w(
+                    TAG,
+                    "$reason Retry ${retryAttempt + 1}/${RETRY_DELAYS_MS.size} in ${delayMs}ms."
+                )
                 retryAttempt++
                 handler.postDelayed({ attemptBind() }, delayMs)
             } else {
@@ -156,37 +164,35 @@ class AiHubClient {
             ?: error("Not connected to AiModelHub service. Call connect() and wait for Connected state.")
     }
 
-    /** Load a model by name (e.g. "Gemma 4 E2B"). Blocking binder call — run on IO thread. */
-    fun loadModel(modelName: String) = loadModel(modelName, onDone = {})
-
     /**
      * Load a model by name and receive a callback when loading completes.
      *
      * [onDone] is called on the binder thread with an empty string on success, or an error
      * message on failure. Run this on an IO thread; the callback arrives asynchronously after
-     * [LiteRtLmHelper.initialize] finishes.
      */
-    fun loadModel(modelName: String, onDone: (error: String) -> Unit) {
-        requireService().loadModel(modelName, object : ILoadModelCallback.Stub() {
-            override fun onSuccess() = onDone("")
-            override fun onError(errorMessage: String) = onDone(errorMessage)
-        })
-    }
+    suspend fun createSession(modelName: String): String =
+        suspendCancellableCoroutine {
+            requireService().createSession(modelName, object : ICreateSessionCallback.Stub() {
+                override fun onSuccess(sessionId: String) = it.resume(sessionId)
+                override fun onError(errorMessage: String) =
+                    it.resumeWithException(RuntimeException(errorMessage))
+            })
+        }
 
     /** Unload a previously loaded model. */
-    fun unloadModel(modelName: String) = requireService().unloadModel(modelName)
+    fun closeSession(sessionId: String) = requireService().closeSession(sessionId)
 
     /** Returns true if the model is currently loaded and ready. */
-    fun isModelLoaded(modelName: String): Boolean = requireService().isModelLoaded(modelName)
+    fun isSessionAlive(sessionId: String): Boolean = requireService().isSessionAlive(sessionId)
 
     /** Returns names of all currently loaded models. */
-    fun getLoadedModels(): List<String> = requireService().getLoadedModels()
+    fun getAvailableModels(): List<String> = requireService().getAvailableModels()
 
     /** Stop an ongoing generation for the given model. */
-    fun stopGeneration(modelName: String) = requireService().stopGeneration(modelName)
+    fun stopGeneration(sessionId: String) = requireService().stopGeneration(sessionId)
 
     /** Reset conversation history for the given model. */
-    fun resetSession(modelName: String) = requireService().resetSession(modelName)
+    fun resetSession(sessionId: String) = requireService().resetSession(sessionId)
 
     /**
      * Send a message and receive streaming tokens as a Flow.
@@ -196,13 +202,13 @@ class AiHubClient {
      *
      * Example:
      * ```
-     * client.sendMessage("Gemma 4 E2B", "Tell me a joke")
+     * client.sendMessage(sessionId, "Tell me a joke")
      *     .collect { token -> print(token) }
      * ```
      */
-    fun sendMessage(modelName: String, message: String): Flow<String> = callbackFlow {
+    fun sendMessage(sessionId: String, message: String): Flow<String> = callbackFlow {
         val service = requireService()
-        service.sendMessage(modelName, message, object : IAiResponseCallback.Stub() {
+        service.sendMessage(sessionId, message, object : IAiResponseCallback.Stub() {
             override fun onToken(token: String) {
                 trySend(token)
             }
@@ -218,7 +224,7 @@ class AiHubClient {
         awaitClose {
             // Cancel generation if the collector is cancelled mid-stream
             try {
-                service.stopGeneration(modelName)
+                service.stopGeneration(sessionId)
             } catch (_: Exception) {
             }
         }
