@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.ai_model_hub.R
 import com.ai_model_hub.ui.settings.widget.BackendPreferenceSection
+import com.ai_model_hub.ui.settings.widget.SpeculativeDecodingSection
 
 @Composable
 fun SettingsScreen(
@@ -36,6 +37,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val backendPreference by viewModel.backendPreference.collectAsState()
+    val enableSpeculativeDecoding by viewModel.enableSpeculativeDecoding.collectAsState()
 
     Column(
         modifier = Modifier
@@ -47,6 +49,11 @@ fun SettingsScreen(
         BackendPreferenceSection(
             selected = backendPreference,
             onSelect = { viewModel.setBackendPreference(it) },
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        SpeculativeDecodingSection(
+            enabled = enableSpeculativeDecoding,
+            onToggle = { viewModel.setEnableSpeculativeDecoding(it) },
         )
     }
 }

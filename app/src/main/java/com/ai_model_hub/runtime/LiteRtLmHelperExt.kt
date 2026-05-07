@@ -22,7 +22,8 @@ fun LiteRtLmHelper.createSession(
             temperature = 0.8,
         )
     ),
-    backendPreference: BackendPreference = BackendPreference.CPU
+    backendPreference: BackendPreference = BackendPreference.CPU,
+    enableSpeculativeDecoding: Boolean = false,
 ): LlmSession {
     val model = ModelAllowlist.findByName(modelName) ?: run {
         throw IllegalArgumentException("Model not found: $modelName")
@@ -31,7 +32,8 @@ fun LiteRtLmHelper.createSession(
         context = context,
         model = model,
         conversationConfig = conversationConfig,
-        backendPreference = backendPreference
+        backendPreference = backendPreference,
+        enableSpeculativeDecoding = enableSpeculativeDecoding,
     )
 }
 

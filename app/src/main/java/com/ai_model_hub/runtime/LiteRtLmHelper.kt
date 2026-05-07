@@ -12,6 +12,7 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.Role
@@ -45,6 +46,7 @@ object LiteRtLmHelper {
         context: Context,
         model: Model,
         backendPreference: BackendPreference = BackendPreference.CPU,
+        enableSpeculativeDecoding: Boolean = false,
     ): Engine {
         val modelPath = model.getModelFilePath(context)
         Log.d(TAG, "Initializing model at: $modelPath")
@@ -76,6 +78,11 @@ object LiteRtLmHelper {
             val useGpu = backendPreference == BackendPreference.GPU &&
                     BackendPreference.GPU in model.supportedBackends
             Log.d(TAG, "Using backend: ${if (useGpu) "GPU" else "CPU"} for model: ${model.name}")
+
+            // Enable MTP via speculative decoding
+            @OptIn(ExperimentalApi::class)
+            ExperimentalFlags.enableSpeculativeDecoding = enableSpeculativeDecoding
+
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = if (useGpu) Backend.GPU() else Backend.CPU(),
@@ -102,11 +109,17 @@ object LiteRtLmHelper {
             )
         ),
         backendPreference: BackendPreference = BackendPreference.CPU,
+        enableSpeculativeDecoding: Boolean = false,
     ): LlmSession {
         // One engine per model — create only if not yet loaded.
         val holder = engineHolders.getOrPut(model.name) {
             EngineHolder(
-                engine = initialize(context, model, backendPreference),
+                engine = initialize(
+                    context = context,
+                    model = model,
+                    backendPreference = backendPreference,
+                    enableSpeculativeDecoding = enableSpeculativeDecoding
+                ),
                 model = model,
             )
         }

@@ -37,6 +37,8 @@
     <string name="backend_cpu">CPU</string>
     <string name="backend_gpu">GPU</string>
     <string name="inference_backend_description">Choose the preferred compute backend for model inference. Takes effect the next time a model is loaded. GPU is only used when the model declares GPU support.</string>
+    <string name="speculative_decoding">Speculative Decoding (MTP)</string>
+    <string name="speculative_decoding_description">Enable Multi-Token Prediction for faster inference. Recommended for GPU. Takes effect the next time a model is loaded.</string>
     <string name="language">Language</string>
     <string name="language_description">Choose the display language for the app. Takes effect immediately.</string>
     <string name="language_system">System</string>

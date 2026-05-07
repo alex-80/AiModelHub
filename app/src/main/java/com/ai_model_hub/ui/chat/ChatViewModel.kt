@@ -54,11 +54,13 @@ class ChatViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isModelLoading = true, modelError = "")
         viewModelScope.launch(Dispatchers.Default) {
             val backendPreference = appRepository.backendPreference.first()
+            val enableSpeculativeDecoding = appRepository.speculativeDecoding.first()
             try {
                 session = LiteRtLmHelper.createSession(
                     context = context,
                     modelName = modelName,
                     backendPreference = backendPreference,
+                    enableSpeculativeDecoding = enableSpeculativeDecoding,
                 )
                 _uiState.value = _uiState.value.copy(isModelLoading = false)
             } catch (e: Exception) {

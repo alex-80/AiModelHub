@@ -45,7 +45,8 @@ class AiModelHubService : Service() {
         override fun createSession(modelName: String, callback: ICreateSessionCallback) {
             serviceScope.launch {
                 val backendPreference = appRepository.backendPreference.first()
-                Log.d(TAG, "loadModel: $modelName, backend: $backendPreference")
+                val enableSpeculativeDecoding = appRepository.speculativeDecoding.first()
+                Log.d(TAG, "loadModel: $modelName, backend: $backendPreference, speculativeDecoding: $enableSpeculativeDecoding")
                 val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
                     Log.w(TAG, "Model not found in allowlist: $modelName")
                     callback.onError("Model not found in allowlist: $modelName")
@@ -55,7 +56,8 @@ class AiModelHubService : Service() {
                     val session = LiteRtLmHelper.createSession(
                         context = applicationContext,
                         model = modelSpec,
-                        backendPreference = backendPreference
+                        backendPreference = backendPreference,
+                        enableSpeculativeDecoding = enableSpeculativeDecoding,
                     )
                     Log.d(TAG, "Model loaded successfully: $modelName")
                     callback.onSuccess(session.id)

@@ -19,7 +19,14 @@ class SettingsViewModel @Inject constructor(
     val backendPreference: StateFlow<BackendPreference> = appRepository.backendPreference
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BackendPreference.CPU)
 
+    val enableSpeculativeDecoding: StateFlow<Boolean> = appRepository.speculativeDecoding
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setBackendPreference(pref: BackendPreference) {
         viewModelScope.launch { appRepository.setBackendPreference(pref) }
+    }
+
+    fun setEnableSpeculativeDecoding(enabled: Boolean) {
+        viewModelScope.launch { appRepository.setSpeculativeDecoding(enabled) }
     }
 }

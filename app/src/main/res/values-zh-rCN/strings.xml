@@ -37,6 +37,8 @@
     <string name="backend_cpu">CPU</string>
     <string name="backend_gpu">GPU</string>
     <string name="inference_backend_description">选择模型推理的首选计算后端。下次加载模型时生效。仅当模型声明支持 GPU 时才会使用 GPU。</string>
+    <string name="speculative_decoding">推测解码 (MTP)</string>
+    <string name="speculative_decoding_description">启用多令牌预测以加快推理速度。建议在 GPU 上使用。下次加载模型时生效。</string>
     <string name="language">语言</string>
     <string name="language_description">选择应用的显示语言，立即生效。</string>
     <string name="language_system">跟随系统</string>

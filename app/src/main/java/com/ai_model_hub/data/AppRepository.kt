@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -26,6 +27,7 @@ class AppRepository @Inject constructor(
     private val DOWNLOADED_MODELS_KEY = stringSetPreferencesKey("downloaded_models")
     private val ENABLED_MODELS_KEY = stringSetPreferencesKey("enabled_models")
     private val BACKEND_PREFERENCE_KEY = stringPreferencesKey("preferred_backend")
+    private val SPECULATIVE_DECODING_KEY = booleanPreferencesKey("speculative_decoding_enabled")
 
     val downloadedModels: Flow<Set<String>> = context.dataStore.data.map { prefs ->
         prefs[DOWNLOADED_MODELS_KEY] ?: emptySet()
@@ -40,6 +42,10 @@ class AppRepository @Inject constructor(
             BackendPreference.GPU.name -> BackendPreference.GPU
             else -> BackendPreference.CPU
         }
+    }
+
+    val speculativeDecoding: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[SPECULATIVE_DECODING_KEY] ?: true
     }
 
     suspend fun markModelDownloaded(modelName: String) {
@@ -68,6 +74,12 @@ class AppRepository @Inject constructor(
     suspend fun setBackendPreference(pref: BackendPreference) {
         context.dataStore.edit { prefs ->
             prefs[BACKEND_PREFERENCE_KEY] = pref.name
+        }
+    }
+
+    suspend fun setSpeculativeDecoding(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[SPECULATIVE_DECODING_KEY] = enabled
         }
     }
 
