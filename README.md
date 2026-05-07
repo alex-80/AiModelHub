@@ -12,6 +12,7 @@ An Android application for managing on-device AI language models and exposing th
 - **In-app Chat** — converse with any downloaded model directly inside the app
 - **Enabled/Disabled toggle** — enable a model to make it available to the bound service; state is persisted across restarts
 - **AIDL Bound Service** — exposes loaded models to any third-party app via a stable IPC interface
+- **Multi-session support** — multiple independent sessions can exist on the same model simultaneously; sessions share one engine and queue automatically when the engine is busy
 - **SDK library (`:sdk`)** — a ready-made Kotlin client (`AiHubClient`) for integrating with the service
 - **Demo app (`:demo`)** — a minimal sample showing end-to-end SDK usage
 
@@ -74,8 +75,8 @@ UI (Compose)
 - **`ModelAllowlist`** — single source of truth for all supported models; add new models here only.
 - **`AppRepository`** — DataStore-backed persistence for downloaded and enabled model sets.
 - **`DownloadWorker`** — `CoroutineWorker` with resumable HTTP download, progress reporting, and foreground notification.
-- **`LiteRtLmHelper`** — wraps `Engine` / `Conversation` from the LiteRT LM SDK. Stores the live engine in `model.instance` as `LlmInstance`.
-- **`AiModelHubService`** — AIDL `Stub` that manages loaded model instances and streams inference tokens back to callers.
+- **`LiteRtLmHelper`** — manages `Engine` / `Conversation` lifecycle via `EngineHolder`. Each model gets one `Engine`; a `Mutex` serializes access to the single allowed `Conversation`, enabling multiple virtual `LlmSession`s to share it safely. Session history is stored in-memory and restored via `ConversationConfig.initialMessages` on session switch.
+- **`AiModelHubService`** — AIDL `Stub` that manages session instances and streams inference tokens back to callers.
 
 ### `:sdk`
 
@@ -186,10 +187,13 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 ### 3. Use `AiHubClient`
 
-```kotlin
-class MyViewModel(app: Application) : AndroidViewModel(app) {
+Sessions are identified by a `sessionId` returned from `createSession`. One session = one independent conversation context; multiple sessions on the same model share a single engine.
 
-    private val client = AiHubClient(app.applicationContext)
+```kotlin
+class MyViewModel : ViewModel() {
+
+    private val client = AiHubClient()
+    private var sessionId: String? = null
 
     init {
         // Observe connection state
@@ -208,19 +212,25 @@ class MyViewModel(app: Application) : AndroidViewModel(app) {
     fun connect() = client.connect()
 
     fun loadModel() {
-        viewModelScope.launch(Dispatchers.IO) {
-            client.loadModel("Gemma 4 E2B")
+        try {
+            sessionId = client.createSession(modelName = "Gemma 4 E2B")
+        } catch (e: Exception) {
+            /* handle */
         }
-    }
+    }   
 
     fun chat(message: String) {
+        val id = sessionId ?: return
         viewModelScope.launch {
-            client.sendMessage("Gemma 4 E2B", message)
+            client.sendMessage(id, message)
                 .collect { token -> /* append token to UI */ }
         }
     }
 
+    fun resetChat() = sessionId?.let { client.resetSession(it) }
+
     override fun onCleared() {
+        sessionId?.let { client.closeSession(it) }
         client.disconnect()
     }
 }
@@ -230,13 +240,18 @@ class MyViewModel(app: Application) : AndroidViewModel(app) {
 
 ```java
 // IAiModelHubService
-List<String> getLoadedModels();
-void         loadModel(String modelName);
-void         unloadModel(String modelName);
-boolean      isModelLoaded(String modelName);
-void         sendMessage(String modelName, String message, IAiResponseCallback callback);
-void         stopGeneration(String modelName);
-void         resetSession(String modelName);
+List<String> getAvailableModels();
+// Creates a session and returns its ID via callback
+void    createSession(String modelName, ICreateSessionCallback callback);
+void    closeSession(String sessionId);
+boolean isSessionAlive(String sessionId);
+void    sendMessage(String sessionId, String message, IAiResponseCallback callback);
+void    stopGeneration(String sessionId);
+void    resetSession(String sessionId);  // clears conversation history
+
+// ICreateSessionCallback
+void onSuccess(String sessionId);
+void onError(String errorMessage);
 
 // IAiResponseCallback
 void onToken(String token);       // incremental token

@@ -1,6 +1,6 @@
 package com.ai_model_hub.service;
 
-interface ILoadModelCallback {
-    void onSuccess();
+interface ICreateSessionCallback {
+    void onSuccess(String sessionId);
     void onError(String errorMessage);
 }

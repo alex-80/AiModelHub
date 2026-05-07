@@ -6,82 +6,86 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import com.ai_model_hub.data.AppRepository
 import com.ai_model_hub.runtime.LiteRtLmHelper
-import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.runtime.cleanUp
+import com.ai_model_hub.runtime.isSessionAlive
+import com.ai_model_hub.runtime.resetSession
+import com.ai_model_hub.runtime.sendMessage
+import com.ai_model_hub.runtime.stopGeneration
 import com.ai_model_hub.sdk.ModelAllowlist
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "AiModelHubService"
 
+@AndroidEntryPoint
 class AiModelHubService : Service() {
+
+    @Inject
+    lateinit var appRepository: AppRepository
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // Named _models to avoid clash with Kotlin's property synthesis of AIDL's getLoadedModels()
-    private val _models: MutableMap<String, Model> = mutableMapOf()
+    @Volatile
+    private var _enabledModels: Set<String> = emptySet()
 
     private val binder = object : IAiModelHubService.Stub() {
 
-        override fun getLoadedModels(): List<String> {
-            return _models.keys.toList()
+        override fun getAvailableModels(): List<String> {
+            return _enabledModels.toList()
         }
 
-        override fun loadModel(modelName: String, callback: ILoadModelCallback) {
-            Log.d(TAG, "loadModel: $modelName")
-            val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
-                Log.w(TAG, "Model not found in allowlist: $modelName")
-                callback.onError("Model not found in allowlist: $modelName")
-                return
-            }
-            if (_models.containsKey(modelName)) {
-                Log.d(TAG, "Model already loaded: $modelName")
-                callback.onSuccess()
-                return
-            }
-            val model = modelSpec.copy()
-            LiteRtLmHelper.initialize(
-                context = applicationContext,
-                model = model,
-                onDone = { error ->
-                    if (error.isEmpty()) {
-                        _models[modelName] = model
-                        Log.d(TAG, "Model loaded successfully: $modelName")
-                        callback.onSuccess()
-                    } else {
-                        Log.e(TAG, "Failed to load model: $error")
-                        callback.onError(error)
-                    }
+        override fun createSession(modelName: String, callback: ICreateSessionCallback) {
+            serviceScope.launch {
+                val backendPreference = appRepository.backendPreference.first()
+                Log.d(TAG, "loadModel: $modelName, backend: $backendPreference")
+                val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
+                    Log.w(TAG, "Model not found in allowlist: $modelName")
+                    callback.onError("Model not found in allowlist: $modelName")
+                    return@launch
                 }
-            )
-        }
-
-        override fun unloadModel(modelName: String) {
-            Log.d(TAG, "unloadModel: $modelName")
-            _models.remove(modelName)?.let { model ->
-                LiteRtLmHelper.cleanUp(model)
+                try {
+                    val session = LiteRtLmHelper.createSession(
+                        context = applicationContext,
+                        model = modelSpec,
+                        backendPreference = backendPreference
+                    )
+                    Log.d(TAG, "Model loaded successfully: $modelName")
+                    callback.onSuccess(session.id)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load model: ${e.message}")
+                    callback.onError(e.message)
+                }
             }
+
         }
 
-        override fun isModelLoaded(modelName: String): Boolean {
-            return _models.containsKey(modelName) && _models[modelName]?.instance != null
+        override fun closeSession(sessionId: String) {
+            Log.d(TAG, "unloadModel: $sessionId")
+            LiteRtLmHelper.cleanUp(sessionId)
+        }
+
+        override fun isSessionAlive(sessionId: String): Boolean {
+            return LiteRtLmHelper.isSessionAlive(sessionId)
         }
 
         override fun sendMessage(
-            modelName: String,
+            sessionId: String,
             message: String,
             callback: IAiResponseCallback
         ) {
-            Log.d(TAG, "sendMessage to $modelName: ${message.take(50)}")
-            val model = _models[modelName] ?: run {
-                callback.onError("Model '$modelName' is not loaded")
-                return
-            }
+            Log.d(TAG, "sendMessage to $sessionId: ${message.take(50)}")
+
             val sb = StringBuilder()
-            LiteRtLmHelper.runInference(
-                model = model,
+            LiteRtLmHelper.sendMessage(
+                sessionId = sessionId,
                 input = message,
                 onToken = { token, done ->
                     if (!done && token.isNotEmpty()) {
@@ -98,12 +102,21 @@ class AiModelHubService : Service() {
             )
         }
 
-        override fun stopGeneration(modelName: String) {
-            _models[modelName]?.let { LiteRtLmHelper.stopGeneration(it) }
+        override fun stopGeneration(sessionId: String) {
+            LiteRtLmHelper.stopGeneration(sessionId)
         }
 
-        override fun resetSession(modelName: String) {
-            _models[modelName]?.let { LiteRtLmHelper.resetConversation(it) }
+        override fun resetSession(sessionId: String) {
+            LiteRtLmHelper.resetSession(sessionId)
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        serviceScope.launch {
+            appRepository.enabledModels.collect { enabled ->
+                _enabledModels = enabled
+            }
         }
     }
 
@@ -146,8 +159,7 @@ class AiModelHubService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        _models.values.forEach { LiteRtLmHelper.cleanUp(it) }
-        _models.clear()
+        LiteRtLmHelper.cleanUp()
         serviceScope.cancel()
         Log.d(TAG, "Service destroyed")
     }

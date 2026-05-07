@@ -91,8 +91,8 @@ fun DemoScreen(vm: DemoViewModel = viewModel()) {
                 ModelCard(
                     state,
                     onSelectModel = vm::selectModel,
-                    onLoad = vm::loadModel,
-                    onUnload = vm::unloadModel
+                    onLoad = vm::createSession,
+                    onUnload = vm::closeSession
                 )
             }
 
@@ -197,7 +197,7 @@ private fun ModelCard(
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    MODELS.forEach { model ->
+                    state.availableModels.forEach { model ->
                         DropdownMenuItem(
                             text = { Text(model) },
                             onClick = { onSelectModel(model); expanded = false },

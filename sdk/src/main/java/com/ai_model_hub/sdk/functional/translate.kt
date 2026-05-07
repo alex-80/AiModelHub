@@ -1,14 +1,12 @@
 package com.ai_model_hub.sdk.functional
 
+import android.util.Log
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 object TranslateAvailableLanguage {
     const val ARABIC = "Arabic"
@@ -58,6 +56,8 @@ enum class TranslationErrorCause {
 class TranslationException(message: String, val causeType: TranslationErrorCause) :
     Exception(message)
 
+private const val TAG = "TranslateFunction"
+
 /**
  * Translate [text] to [targetLanguage] using [modelName] and emit incremental tokens.
  *
@@ -89,27 +89,18 @@ fun translateStream(
     )
     check(connected is ConnectionState.Connected)
 
-    // 2. Load model if not already loaded
-    if (!client.isModelLoaded(modelName)) {
-        suspendCancellableCoroutine { cont ->
-            client.loadModel(modelName) { error ->
-                if (error.isEmpty()) cont.resume(Unit)
-                else cont.resumeWithException(
-                    TranslationException(
-                        "Failed to load model \"$modelName\": $error",
-                        TranslationErrorCause.MODEL_LOAD_FAILED,
-                    )
-                )
-            }
-        }
-    }
+    // 2. Load model and get session ID
+    val sessionId =  client.createSession(modelName)
+    Log.d(TAG, "Model \"$modelName\" loaded with session ID: $sessionId")
 
-    // 3. Reset session to avoid context bleed-in from previous calls
-    client.resetSession(modelName)
-
-    // 4. Build prompt and stream tokens
+    // 3. Build prompt and stream tokens
     val prompt = buildPrompt(text, targetLanguage, sourceLanguage)
-    client.sendMessage(modelName, prompt).collect { token -> emit(token) }
+    Log.d(TAG, "Sending prompt to model \"$modelName\" (session: $sessionId): ${prompt.take(100)}")
+    client.sendMessage(sessionId, prompt).collect { token -> emit(token) }
+
+    // 4. close session after generation completes
+    Log.d(TAG, "Translation completed for session $sessionId, closing session.")
+    client.closeSession(sessionId)
 }
 
 /**

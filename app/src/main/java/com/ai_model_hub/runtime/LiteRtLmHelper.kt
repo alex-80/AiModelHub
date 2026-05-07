@@ -7,40 +7,45 @@ import com.ai_model_hub.data.getModelFilePath
 import com.ai_model_hub.sdk.BackendPreference
 import com.ai_model_hub.sdk.Model
 import com.google.ai.edge.litertlm.Backend
-import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
-import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.ExperimentalApi
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
+import com.google.ai.edge.litertlm.Role
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.util.Collections
+import java.util.UUID
 import java.util.concurrent.CancellationException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 private const val TAG = "LiteRtLmHelper"
-
-data class LlmInstance(val engine: Engine, var conversation: Conversation)
 
 typealias TokenListener = (token: String, done: Boolean) -> Unit
 
 @OptIn(ExperimentalApi::class)
 object LiteRtLmHelper {
 
-    fun initialize(
+    internal val sessions: MutableList<LlmSession> = Collections.synchronizedList(mutableListOf())
+
+    /** One EngineHolder per model name — engines are never loaded twice for the same model. */
+    private val engineHolders: MutableMap<String, EngineHolder> =
+        Collections.synchronizedMap(mutableMapOf())
+
+    private fun initialize(
         context: Context,
         model: Model,
         backendPreference: BackendPreference = BackendPreference.CPU,
-        topK: Int = 40,
-        topP: Float = 0.95f,
-        temperature: Float = 0.8f,
-        onDone: (errorMsg: String) -> Unit,
-    ) {
+    ): Engine {
         val modelPath = model.getModelFilePath(context)
         Log.d(TAG, "Initializing model at: $modelPath")
 
@@ -52,16 +57,15 @@ object LiteRtLmHelper {
         // XNNPack calls abort() (uncatchable SIGABRT) if it cannot write the cache file.
         // Pre-check space to give a friendly error instead of a hard crash.
         val freeBytes = StatFs(xnnpackCacheDir.absolutePath).availableBytes
-        val requiredBytes = 1_500L * 1024 * 1024 // 1.5 GB conservative estimate
+        val requiredBytes = 1_000L * 1024 * 1024 // 1 GB conservative estimate
         val modelFileName = File(modelPath).name
         val cacheAlreadyExists =
             xnnpackCacheDir.listFiles()?.any { it.name.startsWith(modelFileName) } == true
         if (!cacheAlreadyExists && freeBytes < requiredBytes) {
-            val msg = "空间不足：XNNPack 权重缓存需要至少 1.5 GB 可用空间，" +
+            val msg = "空间不足：XNNPack 权重缓存需要至少 1 GB 可用空间，" +
                     "当前仅剩 ${freeBytes / 1_048_576} MB。请清理存储后重试。"
             Log.e(TAG, msg)
-            onDone(msg)
-            return
+            throw IllegalStateException(msg)
         }
         Log.d(
             TAG,
@@ -71,6 +75,7 @@ object LiteRtLmHelper {
         try {
             val useGpu = backendPreference == BackendPreference.GPU &&
                     BackendPreference.GPU in model.supportedBackends
+            Log.d(TAG, "Using backend: ${if (useGpu) "GPU" else "CPU"} for model: ${model.name}")
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = if (useGpu) Backend.GPU() else Backend.CPU(),
@@ -79,111 +84,171 @@ object LiteRtLmHelper {
             )
             val engine = Engine(engineConfig)
             engine.initialize()
-
-            val conversation = engine.createConversation(
-                ConversationConfig(
-                    samplerConfig = SamplerConfig(
-                        topK = topK,
-                        topP = topP.toDouble(),
-                        temperature = temperature.toDouble(),
-                    )
-                )
-            )
-            model.instance = LlmInstance(engine = engine, conversation = conversation)
-            Log.d(TAG, "Model initialized: ${model.name}")
-            onDone("")
+            return engine
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize model", e)
-            onDone(e.message ?: "Unknown error")
+            throw e
         }
     }
 
-    fun resetConversation(
+    fun createSession(
+        context: Context,
         model: Model,
-        topK: Int = 40,
-        topP: Float = 0.95f,
-        temperature: Float = 0.8f,
-    ) {
-        val instance = model.instance as? LlmInstance ?: return
-        try {
-            instance.conversation.close()
-            val newConversation = instance.engine.createConversation(
-                ConversationConfig(
-                    samplerConfig = SamplerConfig(
-                        topK = topK,
-                        topP = topP.toDouble(),
-                        temperature = temperature.toDouble(),
-                    )
-                )
+        conversationConfig: ConversationConfig = ConversationConfig(
+            samplerConfig = SamplerConfig(
+                topK = 40,
+                topP = 0.95,
+                temperature = 0.8,
             )
-            instance.conversation = newConversation
-            Log.d(TAG, "Conversation reset for: ${model.name}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to reset conversation", e)
+        ),
+        backendPreference: BackendPreference = BackendPreference.CPU,
+    ): LlmSession {
+        // One engine per model — create only if not yet loaded.
+        val holder = engineHolders.getOrPut(model.name) {
+            EngineHolder(
+                engine = initialize(context, model, backendPreference),
+                model = model,
+            )
         }
+
+        // Conversation is created lazily on the first sendMessage call.
+        val session = LlmSession(
+            engineHolder = holder,
+            id = UUID.randomUUID().toString(),
+            model = model,
+            conversationConfig = conversationConfig,
+        )
+        sessions.add(session)
+        Log.d(TAG, "Session created: ${session.id} for model: ${model.name}")
+        return session
     }
 
-    fun runInference(
-        model: Model,
-        input: String,
+    fun sendMessage(
+        session: LlmSession,
+        input: Contents,
+        userText: String,
         onToken: TokenListener,
         onError: (String) -> Unit,
         coroutineScope: CoroutineScope,
     ) {
-        val instance = model.instance as? LlmInstance
-        if (instance == null) {
-            onError("Model not initialized")
-            return
-        }
-
         coroutineScope.launch(Dispatchers.Default) {
+            val holder = session.engineHolder
             try {
-                instance.conversation.sendMessageAsync(
-                    Contents.of(listOf(Content.Text(input))),
-                    object : MessageCallback {
-                        override fun onMessage(message: Message) {
-                            onToken(message.toString(), false)
-                        }
+                holder.mutex.withLock {
+                    // Switch to this session if a different session is currently active.
+                    if (holder.activeSessionId != session.id) {
+                        holder.activeConversation?.close()
+                        val initialMessages = session.buildInitialMessages()
+                        holder.activeConversation = holder.engine.createConversation(
+                            session.conversationConfig.copy(
+                                initialMessages = initialMessages,
+                                systemInstruction = session.conversationConfig.systemInstruction
+                            )
+                        )
+                        holder.activeSessionId = session.id
+                        Log.d(TAG, "Switched active session to: ${session.id}")
+                    }
 
-                        override fun onDone() {
-                            onToken("", true)
-                        }
+                    val conversation = holder.activeConversation!!
+                    val assistantSb = StringBuilder()
 
-                        override fun onError(throwable: Throwable) {
-                            if (throwable is CancellationException) {
-                                onToken("", true)
-                            } else {
-                                Log.e(TAG, "Inference error", throwable)
-                                onError(throwable.message ?: "Inference error")
-                            }
+                    suspendCancellableCoroutine { cont ->
+                        conversation.sendMessageAsync(
+                            input,
+                            object : MessageCallback {
+                                override fun onMessage(message: Message) {
+                                    val token = message.toString()
+                                    assistantSb.append(token)
+                                    onToken(token, false)
+                                }
+
+                                override fun onDone() {
+                                    onToken("", true)
+                                    cont.resume(Unit)
+                                }
+
+                                override fun onError(throwable: Throwable) {
+                                    if (throwable is CancellationException) {
+                                        onToken("", true)
+                                        cont.resume(Unit)
+                                    } else {
+                                        Log.e(TAG, "Inference error", throwable)
+                                        cont.resumeWithException(throwable)
+                                    }
+                                }
+                            },
+                            emptyMap()
+                        )
+                        // Cancel inference when the coroutine is cancelled (e.g. stopGeneration).
+                        cont.invokeOnCancellation {
+                            holder.activeConversation?.cancelProcess()
                         }
-                    },
-                    emptyMap()
-                )
+                    }
+
+                    // Persist completed exchange to history for future context restoration.
+                    if (assistantSb.isNotEmpty()) {
+                        session.history.add(HistoryEntry(role = Role.USER, text = userText))
+                        session.history.add(
+                            HistoryEntry(
+                                role = Role.MODEL,
+                                text = assistantSb.toString()
+                            )
+                        )
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "runInference error", e)
+                Log.e(TAG, "sendMessage error", e)
                 onError(e.message ?: "Error")
             }
         }
     }
 
-    fun stopGeneration(model: Model) {
-        (model.instance as? LlmInstance)?.conversation?.cancelProcess()
+    fun isSessionAlive(session: LlmSession): Boolean {
+        // A virtual session is "alive" as long as it hasn't been cleaned up.
+        return sessions.contains(session)
     }
 
-    fun cleanUp(model: Model) {
-        val instance = model.instance as? LlmInstance ?: return
-        try {
-            instance.conversation.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "close conversation", e)
+    fun stopGeneration(session: LlmSession) {
+        val holder = session.engineHolder
+        if (holder.activeSessionId == session.id) {
+            holder.activeConversation?.cancelProcess()
         }
-        try {
-            instance.engine.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "close engine", e)
+    }
+
+    fun resetSession(session: LlmSession) {
+        val holder = session.engineHolder
+        if (holder.activeSessionId == session.id) {
+            holder.activeConversation?.close()
+            holder.activeConversation = null
+            holder.activeSessionId = null
         }
-        model.instance = null
-        Log.d(TAG, "Cleaned up: ${model.name}")
+        session.history.clear()
+        Log.d(TAG, "Session reset: ${session.id}")
+    }
+
+    fun cleanUp(session: LlmSession) {
+        val holder = session.engineHolder
+        if (holder.activeSessionId == session.id) {
+            try {
+                holder.activeConversation?.close()
+            } catch (e: Exception) {
+                Log.e(TAG, "close conversation", e)
+            }
+            holder.activeConversation = null
+            holder.activeSessionId = null
+        }
+        sessions.remove(session)
+
+        // Close the engine only when no other session is still using this holder.
+        val holderStillInUse = sessions.any { it.engineHolder === holder }
+        if (!holderStillInUse) {
+            engineHolders.remove(holder.model.name)
+            try {
+                holder.engine.close()
+            } catch (e: Exception) {
+                Log.e(TAG, "close engine", e)
+            }
+        }
+        Log.d(TAG, "Cleaned up session: ${session.id}")
     }
 }

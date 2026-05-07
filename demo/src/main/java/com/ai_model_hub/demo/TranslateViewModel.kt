@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
-import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.sdk.functional.TranslateAvailableLanguage
 import com.ai_model_hub.sdk.functional.TranslationException
 import com.ai_model_hub.sdk.functional.translateStream
@@ -17,16 +16,15 @@ import kotlinx.coroutines.launch
 
 data class TranslateUiState(
     val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val selectedModel: String = TRANSLATE_MODELS.first(),
+    val selectedModel: String = "",
     val sourceLanguage: String = "",
     val targetLanguage: String = TranslateAvailableLanguage.ENGLISH,
     val inputText: String = "",
     val result: String = "",
     val isTranslating: Boolean = false,
     val errorMessage: String = "",
+    val availableModels: List<String> = emptyList(),
 )
-
-val TRANSLATE_MODELS = ModelAllowlist.models.map { it.name }
 
 class TranslateViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -41,10 +39,21 @@ class TranslateViewModel(app: Application) : AndroidViewModel(app) {
         client.connect()
         viewModelScope.launch {
             client.connectionState.collect { state ->
+
+                val availableModels = if (state is ConnectionState.Connected) {
+                    try {
+                        client.getAvailableModels()
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                } else emptyList()
+
                 _uiState.value = _uiState.value.copy(
                     connectionState = state,
                     errorMessage = if (state is ConnectionState.Error) state.message
                     else _uiState.value.errorMessage,
+                    availableModels = availableModels,
+                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) "" else availableModels.first(),
                 )
             }
         }

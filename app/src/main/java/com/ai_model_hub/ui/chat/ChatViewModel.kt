@@ -6,6 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.data.AppRepository
 import com.ai_model_hub.sdk.ModelAllowlist
 import com.ai_model_hub.runtime.LiteRtLmHelper
+import com.ai_model_hub.runtime.LlmSession
+import com.ai_model_hub.runtime.createSession
+import com.ai_model_hub.runtime.sendMessage
+import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.Model
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -40,45 +44,37 @@ class ChatViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState
 
-    private var currentModelName: String? = null
-    private var loadedModel: Model? = null
+    private var session: LlmSession? = null
+    private val loadedModel get() = session?.model
+    private val currentModelName get() = loadedModel?.name
 
     fun initialize(modelName: String) {
-        if (currentModelName == modelName && loadedModel?.instance != null) return
-        currentModelName = modelName
-
-        val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
-            _uiState.value = _uiState.value.copy(modelError = "Model not found: $modelName")
-            return
-        }
-        val model = modelSpec.copy()
-        loadedModel = model
+        if (currentModelName == modelName && loadedModel != null) return
 
         _uiState.value = _uiState.value.copy(isModelLoading = true, modelError = "")
         viewModelScope.launch(Dispatchers.Default) {
             val backendPreference = appRepository.backendPreference.first()
-            LiteRtLmHelper.initialize(
-                context = context,
-                model = model,
-                backendPreference = backendPreference,
-                onDone = { error ->
-                    if (error.isEmpty()) {
-                        _uiState.value = _uiState.value.copy(isModelLoading = false)
-                    } else {
-                        loadedModel = null
-                        _uiState.value = _uiState.value.copy(
-                            isModelLoading = false,
-                            modelError = error,
-                        )
-                    }
-                }
-            )
+            try {
+                session = LiteRtLmHelper.createSession(
+                    context = context,
+                    modelName = modelName,
+                    backendPreference = backendPreference,
+                )
+                _uiState.value = _uiState.value.copy(isModelLoading = false)
+            } catch (e: Exception) {
+                session = null
+                _uiState.value = _uiState.value.copy(
+                    isModelLoading = false,
+                    modelError = e.message ?: "Unknown error while loading model",
+                )
+                return@launch
+            }
         }
     }
 
     fun sendMessage(userInput: String) {
         if (userInput.isBlank()) return
-        val model = loadedModel ?: return
+        val activeSession = session ?: return
 
         val userMsg = ChatMessage(role = "user", content = userInput)
         val loadingMsg = ChatMessage(role = "assistant", content = "", isLoading = true)
@@ -88,8 +84,8 @@ class ChatViewModel @Inject constructor(
         )
 
         val sb = StringBuilder()
-        LiteRtLmHelper.runInference(
-            model = model,
+        LiteRtLmHelper.sendMessage(
+            session = activeSession,
             input = userInput,
             onToken = { token, done ->
                 if (!done) {
@@ -121,18 +117,18 @@ class ChatViewModel @Inject constructor(
     }
 
     fun stopGeneration() {
-        loadedModel?.let { LiteRtLmHelper.stopGeneration(it) }
+        session?.let { LiteRtLmHelper.stopGeneration(it) }
         _uiState.value = _uiState.value.copy(isGenerating = false)
     }
 
     fun clearSession() {
-        loadedModel?.let { LiteRtLmHelper.resetConversation(it) }
+        session?.let { LiteRtLmHelper.resetSession(it) }
         _uiState.value = _uiState.value.copy(messages = emptyList())
     }
 
     override fun onCleared() {
         super.onCleared()
-        loadedModel?.let { LiteRtLmHelper.cleanUp(it) }
-        loadedModel = null
+        session?.let { LiteRtLmHelper.cleanUp(it) }
+        session = null
     }
 }

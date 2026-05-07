@@ -12,6 +12,7 @@
 - **应用内聊天** — 直接在应用中与已下载的模型对话
 - **启用/禁用切换** — 启用模型后即可通过绑定服务对外提供推理；状态持久化保存，重启后不丢失
 - **AIDL 绑定服务** — 通过稳定的 IPC 接口将已加载模型暴露给第三方应用
+- **多会话支持** — 同一模型可同时存在多个独立会话；各会话共享同一个 Engine，当 Engine 忙碌时自动排队
 - **SDK 库（`:sdk`）** — 封装好的 Kotlin 客户端（`AiHubClient`），方便第三方集成
 - **Demo 应用（`:demo`）** — 展示 SDK 完整用法的最小示例应用
 
@@ -74,8 +75,8 @@ UI 层 (Compose)
 - **`ModelAllowlist`** — 所有支持模型的唯一来源；新增模型只需修改此文件。
 - **`AppRepository`** — 基于 DataStore，持久化已下载与已启用的模型集合。
 - **`DownloadWorker`** — 支持断点续传的 `CoroutineWorker`，含下载进度上报和前台通知。
-- **`LiteRtLmHelper`** — 封装 LiteRT LM SDK 的 `Engine` / `Conversation` API，将运行中的引擎以 `LlmInstance` 形式存储在 `model.instance` 中。
-- **`AiModelHubService`** — AIDL `Stub` 实现，管理已加载模型实例，并将推理 token 流式返回给调用方。
+- **`LiteRtLmHelper`** — 通过 `EngineHolder` 管理 `Engine` / `Conversation` 生命周期。每个模型对应一个 `Engine`，`Mutex` 串行化对唯一 `Conversation` 的访问，使多个虚拟 `LlmSession` 安全共享同一引擎。会话历史保存在内存中，切换会话时通过 `ConversationConfig.initialMessages` 恢复上下文。
+- **`AiModelHubService`** — AIDL `Stub` 实现，管理会话实例，并将推理 token 流式返回给调用方。
 
 ### `:sdk`
 
@@ -186,10 +187,13 @@ implementation("com.ai_model_hub:sdk:0.1.0")
 
 ### 3. 使用 `AiHubClient`
 
-```kotlin
-class MyViewModel(app: Application) : AndroidViewModel(app) {
+每个会话通过 `createSession` 返回的 `sessionId` 标识。一个 `sessionId` 对应一段独立的对话上下文；同一模型的多个会话共享同一个 Engine。
 
-    private val client = AiHubClient(app.applicationContext)
+```kotlin
+class MyViewModel : ViewModel() {
+
+    private val client = AiHubClient()
+    private var sessionId: String? = null
 
     init {
         // 监听连接状态
@@ -208,19 +212,25 @@ class MyViewModel(app: Application) : AndroidViewModel(app) {
     fun connect() = client.connect()
 
     fun loadModel() {
-        viewModelScope.launch(Dispatchers.IO) {
-            client.loadModel("Gemma 4 E2B")
+        try {
+            sessionId = client.createSession(modelName = "Gemma 4 E2B")
+        } catch (e: Exception) {
+            /* handle */
         }
     }
 
     fun chat(message: String) {
+        val id = sessionId ?: return
         viewModelScope.launch {
-            client.sendMessage("Gemma 4 E2B", message)
+            client.sendMessage(id, message)
                 .collect { token -> /* 将 token 追加到 UI */ }
         }
     }
 
+    fun resetChat() = sessionId?.let { client.resetSession(it) }
+
     override fun onCleared() {
+        sessionId?.let { client.closeSession(it) }
         client.disconnect()
     }
 }
@@ -230,13 +240,18 @@ class MyViewModel(app: Application) : AndroidViewModel(app) {
 
 ```java
 // IAiModelHubService
-List<String> getLoadedModels();
-void         loadModel(String modelName);
-void         unloadModel(String modelName);
-boolean      isModelLoaded(String modelName);
-void         sendMessage(String modelName, String message, IAiResponseCallback callback);
-void         stopGeneration(String modelName);
-void         resetSession(String modelName);
+List<String> getAvailableModels();
+// 创建会话，通过回调返回 sessionId
+void    createSession(String modelName, ICreateSessionCallback callback);
+void    closeSession(String sessionId);
+boolean isSessionAlive(String sessionId);
+void    sendMessage(String sessionId, String message, IAiResponseCallback callback);
+void    stopGeneration(String sessionId);
+void    resetSession(String sessionId);  // 清空对话历史
+
+// ICreateSessionCallback
+void onSuccess(String sessionId);
+void onError(String errorMessage);
 
 // IAiResponseCallback
 void onToken(String token);        // 增量 token

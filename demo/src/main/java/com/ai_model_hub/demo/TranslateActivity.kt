@@ -92,7 +92,7 @@ fun TranslateScreen(
             // ── Model selection ──────────────────────────────────────
             ModelDropdown(
                 label = "Model",
-                options = TRANSLATE_MODELS,
+                options = state.availableModels,
                 selected = state.selectedModel,
                 onSelect = vm::selectModel,
             )
