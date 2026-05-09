@@ -45,7 +45,7 @@ class AppRepository @Inject constructor(
     }
 
     val speculativeDecoding: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[SPECULATIVE_DECODING_KEY] ?: true
+        prefs[SPECULATIVE_DECODING_KEY] ?: false
     }
 
     suspend fun markModelDownloaded(modelName: String) {
