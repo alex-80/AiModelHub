@@ -166,8 +166,8 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://maven.pkg.github.com/alex-80/AiModelHub")
             credentials {
-                username = providers.gradleProperty("gpr.user").orNull
-                password = providers.gradleProperty("gpr.key").orNull
+                username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+                password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
@@ -178,10 +178,10 @@ dependencyResolutionManagement {
 
 ```kotlin
 // app/build.gradle.kts
-implementation("com.ai_model_hub:sdk:0.1.0")
+implementation("com.ai_model_hub:sdk:0.3.0")
 ```
 
-> 将 `0.1.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
+> 将 `0.3.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
 
 > SDK 的 `AndroidManifest.xml` 中已声明所需的 `<uses-permission>` 和 `<queries>` 条目。Android 的 Manifest Merger 会在构建时自动将其合并到您的 App 中，无需手动添加任何 manifest 配置。
 

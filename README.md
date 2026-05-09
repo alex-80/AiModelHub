@@ -166,8 +166,8 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://maven.pkg.github.com/alex-80/AiModelHub")
             credentials {
-                username = providers.gradleProperty("gpr.user").orNull
-                password = providers.gradleProperty("gpr.key").orNull
+                username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+                password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
@@ -178,10 +178,10 @@ Then add the SDK dependency:
 
 ```kotlin
 // app/build.gradle.kts
-implementation("com.ai_model_hub:sdk:0.1.0")
+implementation("com.ai_model_hub:sdk:0.3.0")
 ```
 
-> Replace `0.1.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
+> Replace `0.3.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
 
 > The SDK's `AndroidManifest.xml` already declares the required `<uses-permission>` and `<queries>` entries. Android's manifest merger will automatically include them in your app — no manual manifest changes needed.
 
