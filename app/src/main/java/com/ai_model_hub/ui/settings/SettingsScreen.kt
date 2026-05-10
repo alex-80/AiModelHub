@@ -42,7 +42,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         SettingsTopBar(onBack = onBack)
         Spacer(Modifier.height(8.dp))
@@ -61,7 +61,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsTopBar(onBack: () -> Unit) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
     ) {
         Column {
@@ -87,7 +87,6 @@ private fun SettingsTopBar(onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         }
     }
 }

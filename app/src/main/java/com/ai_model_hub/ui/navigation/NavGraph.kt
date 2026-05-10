@@ -1,5 +1,7 @@
 package com.ai_model_hub.ui.navigation
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,7 +18,14 @@ object Routes {
 fun AiModelHubNavGraph() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Routes.MODEL_MANAGER) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.MODEL_MANAGER,
+        enterTransition = { slideInHorizontally { it } },
+        exitTransition = { slideOutHorizontally { -it } },
+        popEnterTransition = { slideInHorizontally { -it } },
+        popExitTransition = { slideOutHorizontally { it } },
+    ) {
         composable(Routes.MODEL_MANAGER) {
             ModelManagerScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },

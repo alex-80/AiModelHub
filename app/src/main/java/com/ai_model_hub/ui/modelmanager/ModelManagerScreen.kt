@@ -50,7 +50,7 @@ fun ModelManagerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         ModelManagerTopBar(onOpenSettings = onOpenSettings)
         LazyColumn(
@@ -93,7 +93,7 @@ fun ModelManagerScreen(
 @Composable
 private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
     ) {
         Column {
@@ -126,7 +126,6 @@ private fun ModelManagerTopBar(onOpenSettings: () -> Unit) {
                     )
                 }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         }
     }
 }
