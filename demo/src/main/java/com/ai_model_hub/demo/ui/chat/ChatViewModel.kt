@@ -19,6 +19,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     init {
+        client.connect()
         viewModelScope.launch {
             client.connectionState.collect { state ->
                 val availableModels = if (state is ConnectionState.Connected) {
@@ -43,9 +44,18 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     fun connect() = client.connect()
 
+    fun selectAndLoad(name: String) {
+        selectModel(name)
+        createSession()
+    }
+
     fun disconnect() {
         client.disconnect()
-        _uiState.value = _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
+        _uiState.value = _uiState.value.copy(
+            isModelLoaded = false,
+            sessionId = "",
+            messages = emptyList(),
+        )
     }
 
     fun selectModel(name: String) {
@@ -53,7 +63,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             selectedModel = name,
             sessionId = "",
             isModelLoaded = false,
-            response = "",
+            messages = emptyList(),
         )
     }
 
@@ -83,35 +93,44 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 client.closeSession(sessionId)
-                _uiState.value = _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
+                _uiState.value = _uiState.value.copy(
+                    isModelLoaded = false,
+                    sessionId = "",
+                    messages = emptyList(),
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unload failed")
             }
         }
     }
 
-    fun updateInput(text: String) {
-        _uiState.value = _uiState.value.copy(inputText = text)
-    }
-
-    fun sendMessage() {
+    fun sendMessage(message: String) {
         val sessionId = _uiState.value.sessionId
-        val message = _uiState.value.inputText.trim()
         if (message.isBlank()) return
+
+        val userMsg = ChatMessage(role = "user", content = message)
+        val loadingMsg = ChatMessage(role = "assistant", content = "", isLoading = true)
         _uiState.value = _uiState.value.copy(
-            inputText = "",
-            response = "",
+            messages = _uiState.value.messages + userMsg + loadingMsg,
             isGenerating = true,
             errorMessage = "",
         )
+
+        val sb = StringBuilder()
         viewModelScope.launch {
             try {
                 client.sendMessage(sessionId, message).collect { token ->
-                    _uiState.value = _uiState.value.copy(response = _uiState.value.response + token)
+                    sb.append(token)
+                    val msgs = _uiState.value.messages.dropLast(1) +
+                            ChatMessage(role = "assistant", content = sb.toString())
+                    _uiState.value = _uiState.value.copy(messages = msgs)
                 }
                 _uiState.value = _uiState.value.copy(isGenerating = false)
             } catch (e: Exception) {
+                val msgs = _uiState.value.messages.dropLast(1) +
+                        ChatMessage(role = "assistant", content = e.message ?: "Generation failed", isError = true)
                 _uiState.value = _uiState.value.copy(
+                    messages = msgs,
                     isGenerating = false,
                     errorMessage = e.message ?: "Generation failed",
                 )
@@ -121,7 +140,15 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     fun stopGeneration() {
         client.stopGeneration(_uiState.value.sessionId)
-        _uiState.value = _uiState.value.copy(isGenerating = false)
+        val msgs = _uiState.value.messages
+        val updatedMsgs = if (msgs.isNotEmpty() && msgs.last().isLoading) {
+            msgs.dropLast(1) + msgs.last().copy(isLoading = false)
+        } else msgs
+        _uiState.value = _uiState.value.copy(messages = updatedMsgs, isGenerating = false)
+    }
+
+    fun clearMessages() {
+        _uiState.value = _uiState.value.copy(messages = emptyList())
     }
 
     override fun onCleared() {

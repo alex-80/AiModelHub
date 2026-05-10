@@ -3,7 +3,6 @@ package com.ai_model_hub.ui.modelmanager.widget
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +15,6 @@ import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +40,6 @@ fun DownloadedCard(
     state: ModelUiState,
     versionTag: String,
     onDelete: () -> Unit,
-    onChat: () -> Unit,
     onToggleEnabled: () -> Unit,
 ) {
     val model = state.model
@@ -144,18 +141,6 @@ fun DownloadedCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    if (isEnabled) {
-                        FilledTonalButton(
-                            onClick = onChat,
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.action_chat),
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                    }
                     IconButton(
                         onClick = onDelete,
                         modifier = Modifier.size(32.dp),
@@ -192,7 +177,6 @@ fun DownloadedCardPreview() {
         ),
         versionTag = "v1.0",
         onDelete = {},
-        onChat = {},
         onToggleEnabled = {},
     )
 }

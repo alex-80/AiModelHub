@@ -41,7 +41,6 @@ import com.ai_model_hub.ui.modelmanager.widget.NotDownloadedCard
 
 @Composable
 fun ModelManagerScreen(
-    onOpenChat: (String) -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: ModelManagerViewModel = hiltViewModel(),
 ) {
@@ -84,7 +83,6 @@ fun ModelManagerScreen(
                     onDownload = { viewModel.downloadModel(state.model) },
                     onCancel = { viewModel.cancelDownload(state.model) },
                     onDelete = { viewModel.deleteModel(state.model) },
-                    onChat = { onOpenChat(state.model.name) },
                     onToggleEnabled = { viewModel.toggleEnabled(state.model) },
                 )
             }
@@ -139,7 +137,6 @@ private fun ModelCard(
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit,
-    onChat: () -> Unit,
     onToggleEnabled: () -> Unit,
 ) {
     val versionTag = state.model.displayName.split(" ").lastOrNull() ?: state.model.version
@@ -163,7 +160,6 @@ private fun ModelCard(
             state = state,
             versionTag = versionTag,
             onDelete = onDelete,
-            onChat = onChat,
             onToggleEnabled = onToggleEnabled,
         )
     }
