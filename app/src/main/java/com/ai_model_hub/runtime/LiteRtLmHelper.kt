@@ -51,10 +51,19 @@ object LiteRtLmHelper {
         val modelPath = model.getModelFilePath(context)
         Log.d(TAG, "Initializing model at: $modelPath")
 
-        // Prefer external storage for the XNNPack cache — it has far more headroom than
-        // the internal /data partition, which may have only tens of MB free.
-        val xnnpackCacheDir = (context.getExternalFilesDir("xnnpack_cache") ?: context.cacheDir)
-            .apply { mkdirs() }
+        // Use getExternalFilesDirs (plural) to consider ALL external volumes, including
+        // removable SD cards. The primary "external" storage (/storage/emulated/0) is
+        // FUSE-mounted from the /data partition, which may have very little free space
+        // even when a physical SD card with gigabytes of room is also present.
+        // Pick the writable volume with the most available bytes; fall back to cacheDir
+        // only when no external volume is accessible at all.
+        val xnnpackCacheDir = context.getExternalFilesDirs("xnnpack_cache")
+            .filterNotNull()
+            .onEach { it.mkdirs() }
+            .filter { it.canWrite() }
+            .maxByOrNull { StatFs(it.absolutePath).availableBytes }
+            ?: (context.getExternalFilesDir("xnnpack_cache") ?: context.cacheDir)
+                .apply { mkdirs() }
 
         // XNNPack calls abort() (uncatchable SIGABRT) if it cannot write the cache file.
         // Pre-check space to give a friendly error instead of a hard crash.
