@@ -73,10 +73,12 @@ jobs:
 
       - name: Rename APKs
         run: |
-          cd ./apk
-          mv app-arm64-v8a-release.apk  AiModelHub-${{ needs.build.outputs.tag-name }}-arm64-v8a.apk
-          mv app-x86_64-release.apk     AiModelHub-${{ needs.build.outputs.tag-name }}-x86_64.apk
-          mv demo-release.apk           AiModelHub-Demo-${{ needs.build.outputs.tag-name }}.apk
+          mv ./apk/app/build/outputs/apk/release/app-arm64-v8a-release.apk \
+             ./apk/AiModelHub-${{ needs.build.outputs.tag-name }}-arm64-v8a.apk
+          mv ./apk/app/build/outputs/apk/release/app-x86_64-release.apk \
+             ./apk/AiModelHub-${{ needs.build.outputs.tag-name }}-x86_64.apk
+          mv ./apk/demo/build/outputs/apk/release/demo-release.apk \
+             ./apk/AiModelHub-Demo-${{ needs.build.outputs.tag-name }}.apk
 
       - name: Create GitHub Release
         env:
