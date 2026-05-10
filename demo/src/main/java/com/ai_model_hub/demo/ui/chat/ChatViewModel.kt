@@ -153,6 +153,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         super.onCleared()
-        client.disconnect()
+        closeSession()
+        disconnect()
     }
 }
