@@ -1,4 +1,4 @@
-package com.ai_model_hub.demo
+package com.ai_model_hub.demo.ui.translate
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -14,18 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class TranslateUiState(
-    val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val selectedModel: String = "",
-    val sourceLanguage: String = "",
-    val targetLanguage: String = TranslateAvailableLanguage.ENGLISH,
-    val inputText: String = "",
-    val result: String = "",
-    val isTranslating: Boolean = false,
-    val errorMessage: String = "",
-    val availableModels: List<String> = emptyList(),
-)
-
 class TranslateViewModel(app: Application) : AndroidViewModel(app) {
 
     private val client = AiHubClient()
@@ -39,7 +27,6 @@ class TranslateViewModel(app: Application) : AndroidViewModel(app) {
         client.connect()
         viewModelScope.launch {
             client.connectionState.collect { state ->
-
                 val availableModels = if (state is ConnectionState.Connected) {
                     try {
                         client.getAvailableModels()

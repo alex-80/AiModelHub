@@ -1,4 +1,4 @@
-package com.ai_model_hub.demo
+package com.ai_model_hub.demo.ui.chat
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -11,25 +11,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class DemoUiState(
-    val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val selectedModel: String = "",
-    val sessionId: String = "",
-    val isModelLoaded: Boolean = false,
-    val isLoadingModel: Boolean = false,
-    val inputText: String = "",
-    val response: String = "",
-    val isGenerating: Boolean = false,
-    val errorMessage: String = "",
-    val availableModels: List<String> = emptyList(),
-)
-
-class DemoViewModel(app: Application) : AndroidViewModel(app) {
+class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     val client = AiHubClient()
 
-    private val _uiState = MutableStateFlow(DemoUiState())
-    val uiState: StateFlow<DemoUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ChatUiState())
+    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -62,13 +49,12 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun selectModel(name: String) {
-        _uiState.value =
-            _uiState.value.copy(
-                selectedModel = name,
-                sessionId = "",
-                isModelLoaded = false,
-                response = ""
-            )
+        _uiState.value = _uiState.value.copy(
+            selectedModel = name,
+            sessionId = "",
+            isModelLoaded = false,
+            response = "",
+        )
     }
 
     fun createSession() {
@@ -86,7 +72,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
                 _uiState.value = _uiState.value.copy(
                     isLoadingModel = false,
                     isModelLoaded = false,
-                    errorMessage = e.message ?: "Load failed"
+                    errorMessage = e.message ?: "Load failed",
                 )
             }
         }
@@ -97,8 +83,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 client.closeSession(sessionId)
-                _uiState.value =
-                    _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
+                _uiState.value = _uiState.value.copy(isModelLoaded = false, sessionId = "", response = "")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unload failed")
             }
@@ -117,7 +102,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
             inputText = "",
             response = "",
             isGenerating = true,
-            errorMessage = ""
+            errorMessage = "",
         )
         viewModelScope.launch {
             try {
@@ -128,7 +113,7 @@ class DemoViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isGenerating = false,
-                    errorMessage = e.message ?: "Generation failed"
+                    errorMessage = e.message ?: "Generation failed",
                 )
             }
         }

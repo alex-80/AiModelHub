@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.material.icon.extended)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.compose.navigation)
     implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.androidx.ui.tooling)
 }

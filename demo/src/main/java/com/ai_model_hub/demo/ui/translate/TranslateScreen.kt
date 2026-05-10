@@ -1,9 +1,5 @@
-package com.ai_model_hub.demo
+package com.ai_model_hub.demo.ui.translate
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,23 +38,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai_model_hub.demo.ui.theme.AiHubDemoTheme
 import com.ai_model_hub.sdk.functional.TranslateAvailableLanguage
-
-class TranslateActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            AiHubDemoTheme {
-                TranslateScreen(onNavigateUp = { finish() })
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,9 +61,13 @@ fun TranslateScreen(
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
     ) { padding ->
         Column(
             modifier = Modifier
@@ -89,7 +79,6 @@ fun TranslateScreen(
         ) {
             Spacer(Modifier.height(4.dp))
 
-            // ── Model selection ──────────────────────────────────────
             ModelDropdown(
                 label = "Model",
                 options = state.availableModels,
@@ -97,7 +86,6 @@ fun TranslateScreen(
                 onSelect = vm::selectModel,
             )
 
-            // ── Language selection ───────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -120,7 +108,6 @@ fun TranslateScreen(
                 )
             }
 
-            // ── Input ────────────────────────────────────────────────
             OutlinedTextField(
                 value = state.inputText,
                 onValueChange = vm::updateInput,
@@ -131,7 +118,6 @@ fun TranslateScreen(
                 maxLines = 6,
             )
 
-            // ── Action buttons ───────────────────────────────────────
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = vm::translate,
@@ -143,12 +129,11 @@ fun TranslateScreen(
                         modifier = Modifier
                             .size(24.dp)
                             .align(Alignment.CenterVertically),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 }
             }
 
-            // ── Result ───────────────────────────────────────────────
             if (state.result.isNotEmpty() || state.isTranslating) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -159,12 +144,11 @@ fun TranslateScreen(
                 }
             }
 
-            // ── Error ────────────────────────────────────────────────
             if (state.errorMessage.isNotEmpty()) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
                 ) {
                     Text(
                         text = state.errorMessage,
@@ -250,5 +234,13 @@ private fun LanguageDropdown(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TranslateScreenPreview() {
+    AiHubDemoTheme {
+        TranslateScreen()
     }
 }
