@@ -117,6 +117,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         )
 
         val sb = StringBuilder()
+        val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 client.sendMessage(sessionId, message).collect { token ->
@@ -125,10 +126,19 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                             ChatMessage(role = "assistant", content = sb.toString())
                     _uiState.value = _uiState.value.copy(messages = msgs)
                 }
-                _uiState.value = _uiState.value.copy(isGenerating = false)
-            } catch (e: Exception) {
+                val durationMs = System.currentTimeMillis() - startTime
                 val msgs = _uiState.value.messages.dropLast(1) +
-                        ChatMessage(role = "assistant", content = e.message ?: "Generation failed", isError = true)
+                        _uiState.value.messages.last().copy(durationMs = durationMs)
+                _uiState.value = _uiState.value.copy(messages = msgs, isGenerating = false)
+            } catch (e: Exception) {
+                val durationMs = System.currentTimeMillis() - startTime
+                val msgs = _uiState.value.messages.dropLast(1) +
+                        ChatMessage(
+                            role = "assistant",
+                            content = e.message ?: "Generation failed",
+                            isError = true,
+                            durationMs = durationMs
+                        )
                 _uiState.value = _uiState.value.copy(
                     messages = msgs,
                     isGenerating = false,

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai_model_hub.demo.ui.chat.ChatMessage
@@ -114,6 +115,19 @@ fun ChatBubble(message: ChatMessage) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            if (!isUser && message.durationMs != null) {
+                Spacer(Modifier.height(2.dp))
+                val durationText = if (message.durationMs < 1000) {
+                    "${message.durationMs}ms"
+                } else {
+                    "${"%.1f".format(message.durationMs / 1000.0)}s"
+                }
+                Text(
+                    text = durationText,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         }
     }
 }
@@ -195,4 +209,19 @@ fun ChatInputBar(
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ChatBubblePreview() {
+    ChatBubble(
+        message = ChatMessage(
+            role = "assistant",
+            content = "Hello! How can I assist you today?",
+            timestamp = System.currentTimeMillis(),
+            isLoading = false,
+            isError = false,
+            durationMs = 1234,
+        )
+    )
 }

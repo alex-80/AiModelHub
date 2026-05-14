@@ -8,6 +8,7 @@ data class ChatMessage(
     val isLoading: Boolean = false,
     val isError: Boolean = false,
     val timestamp: Long = System.currentTimeMillis(),
+    val durationMs: Long? = null, // generation elapsed time, null while loading or for user messages
 )
 
 data class ChatUiState(
