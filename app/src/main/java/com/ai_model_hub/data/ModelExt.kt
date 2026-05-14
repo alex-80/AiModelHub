@@ -1,10 +1,14 @@
 package com.ai_model_hub.data
 
 import android.content.Context
-import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.data.remote.RemoteModel
 import java.io.File
 
-fun Model.getModelDir(context: Context): String {
+private val NORMALIZE_NAME_REGEX = Regex("[^a-zA-Z0-9]")
+
+fun RemoteModel.getModelDir(context: Context): String {
+    val normalizedName = NORMALIZE_NAME_REGEX.replace(name, "_")
+    val version = commitHash.take(7)
     return listOf(
         context.getExternalFilesDir(null)?.absolutePath ?: "",
         normalizedName,
@@ -12,7 +16,7 @@ fun Model.getModelDir(context: Context): String {
     ).joinToString(File.separator)
 }
 
-fun Model.getModelFilePath(context: Context): String {
+fun RemoteModel.getModelFilePath(context: Context): String {
     val baseDir = getModelDir(context)
-    return listOf(baseDir, downloadFileName).joinToString(File.separator)
+    return listOf(baseDir, modelFile).joinToString(File.separator)
 }

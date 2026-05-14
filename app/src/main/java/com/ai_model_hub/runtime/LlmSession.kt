@@ -1,6 +1,6 @@
 package com.ai_model_hub.runtime
 
-import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.data.remote.RemoteModel
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
@@ -22,7 +22,7 @@ data class HistoryEntry(val role: Role, val text: String)
 data class LlmSession(
     internal val engineHolder: EngineHolder,
     val id: String,
-    val model: Model,
+    val model: RemoteModel,
     val conversationConfig: ConversationConfig,
     val history: MutableList<HistoryEntry> = mutableListOf(),
 )

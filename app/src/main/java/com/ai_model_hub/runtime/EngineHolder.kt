@@ -1,6 +1,6 @@
 package com.ai_model_hub.runtime
 
-import com.ai_model_hub.sdk.Model
+import com.ai_model_hub.data.remote.RemoteModel
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.Engine
 import kotlinx.coroutines.sync.Mutex
@@ -15,7 +15,7 @@ import kotlinx.coroutines.sync.Mutex
  */
 class EngineHolder(
     val engine: Engine,
-    val model: Model,
+    val model: RemoteModel,
 ) {
     val mutex = Mutex()
 

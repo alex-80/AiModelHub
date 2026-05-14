@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -77,13 +76,14 @@ fun ModelManagerScreen(
                     )
                 }
             }
-            items(modelStates, key = { it.model.name }) { state ->
+            items(modelStates, key = { it.model.modelId }) { state ->
                 ModelCard(
                     state = state,
                     onDownload = { viewModel.downloadModel(state.model) },
                     onCancel = { viewModel.cancelDownload(state.model) },
                     onDelete = { viewModel.deleteModel(state.model) },
                     onToggleEnabled = { viewModel.toggleEnabled(state.model) },
+                    onUpdate = { viewModel.updateModel(state) },
                 )
             }
         }
@@ -137,8 +137,8 @@ private fun ModelCard(
     onCancel: () -> Unit,
     onDelete: () -> Unit,
     onToggleEnabled: () -> Unit,
+    onUpdate: () -> Unit,
 ) {
-    val versionTag = state.model.displayName.split(" ").lastOrNull() ?: state.model.version
     when (state.downloadStatus.status) {
         ModelDownloadStatusType.NOT_DOWNLOADED,
         ModelDownloadStatusType.FAILED,
@@ -149,17 +149,21 @@ private fun ModelCard(
             onDownload = onDownload,
         )
 
+        ModelDownloadStatusType.UPDATE_IN_PROGRESS,
         ModelDownloadStatusType.IN_PROGRESS -> DownloadingCard(
             model = state.model,
             status = state.downloadStatus,
             onCancel = onCancel,
         )
 
+        ModelDownloadStatusType.UPDATE_CANCELLED,
+        ModelDownloadStatusType.UPDATE_FAILED,
         ModelDownloadStatusType.SUCCEEDED -> DownloadedCard(
             state = state,
-            versionTag = versionTag,
+            versionTag = state.model.version,
             onDelete = onDelete,
             onToggleEnabled = onToggleEnabled,
+            onUpdate = onUpdate,
         )
     }
 }

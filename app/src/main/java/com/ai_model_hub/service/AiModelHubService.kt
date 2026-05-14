@@ -6,19 +6,24 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import com.ai_model_hub.data.AllowlistRepository
 import com.ai_model_hub.data.AppRepository
+import com.ai_model_hub.data.db.toRemoteModel
+import com.ai_model_hub.data.remote.RemoteModel
+import com.ai_model_hub.data.remote.toModel
 import com.ai_model_hub.runtime.LiteRtLmHelper
 import com.ai_model_hub.runtime.cleanUp
 import com.ai_model_hub.runtime.isSessionAlive
 import com.ai_model_hub.runtime.resetSession
 import com.ai_model_hub.runtime.sendMessage
 import com.ai_model_hub.runtime.stopGeneration
-import com.ai_model_hub.sdk.ModelAllowlist
+import com.ai_model_hub.sdk.Model
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,42 +36,55 @@ class AiModelHubService : Service() {
     @Inject
     lateinit var appRepository: AppRepository
 
+    @Inject
+    lateinit var allowlistRepository: AllowlistRepository
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile
     private var _enabledModels: Set<String> = emptySet()
 
+    /** Cache of modelId → RemoteModel for quick lookup during createSession. */
+    @Volatile
+    private var _remoteModels: Map<String, RemoteModel> = emptyMap()
+
     private val binder = object : IAiModelHubService.Stub() {
 
-        override fun getAvailableModels(): List<String> {
-            return _enabledModels.toList()
+        override fun getAvailableModels(): List<Model> {
+            return _remoteModels.values
+                .filter { it.modelId in _enabledModels }
+                .map { it.toModel() }
         }
 
-        override fun createSession(modelName: String, callback: ICreateSessionCallback) {
+        override fun createSession(model: Model, callback: ICreateSessionCallback) {
             serviceScope.launch {
                 val backendPreference = appRepository.backendPreference.first()
                 val enableSpeculativeDecoding = appRepository.speculativeDecoding.first()
-                Log.d(TAG, "loadModel: $modelName, backend: $backendPreference, speculativeDecoding: $enableSpeculativeDecoding")
-                val modelSpec = ModelAllowlist.findByName(modelName) ?: run {
-                    Log.w(TAG, "Model not found in allowlist: $modelName")
-                    callback.onError("Model not found in allowlist: $modelName")
+                Log.d(
+                    TAG,
+                    "loadModel: ${model.modelId}, backend: $backendPreference, speculativeDecoding: $enableSpeculativeDecoding"
+                )
+                val remoteModel = _remoteModels[model.modelId]
+                    ?: allowlistRepository.getByModelId(model.modelId)?.toRemoteModel()
+                if (remoteModel == null) {
+                    Log.w(TAG, "RemoteModel not found for modelId: ${model.modelId}")
+                    callback.onError("Model not found: ${model.modelId}")
                     return@launch
                 }
                 try {
                     val session = LiteRtLmHelper.createSession(
                         context = applicationContext,
-                        model = modelSpec,
+                        model = remoteModel,
                         backendPreference = backendPreference,
                         enableSpeculativeDecoding = enableSpeculativeDecoding,
                     )
-                    Log.d(TAG, "Model loaded successfully: $modelName")
+                    Log.d(TAG, "Model loaded successfully: ${model.modelId}")
                     callback.onSuccess(session.id)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load model: ${e.message}")
                     callback.onError(e.message)
                 }
             }
-
         }
 
         override fun closeSession(sessionId: String) {
@@ -118,6 +136,11 @@ class AiModelHubService : Service() {
         serviceScope.launch {
             appRepository.enabledModels.collect { enabled ->
                 _enabledModels = enabled
+            }
+        }
+        serviceScope.launch {
+            allowlistRepository.modelsFlow.collect { entities ->
+                _remoteModels = entities.associate { it.modelId to it.toRemoteModel() }
             }
         }
     }

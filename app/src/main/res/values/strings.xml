@@ -23,14 +23,18 @@
     <string name="action_delete">Delete</string>
     <string name="action_download">Download</string>
     <string name="action_cancel_download">Cancel Download</string>
+    <string name="action_update">Update</string>
     <string name="action_back">Back</string>
     <string name="action_attach">Attach</string>
     <string name="action_stop">Stop</string>
     <string name="action_send">Send</string>
     <string name="action_clear_session">Clear session</string>
 
-    <!-- Error -->
+    <!-- Model update -->
+    <string name="update_available">Update available</string>
     <string name="error_message">Error: %1$s</string>
+
+
 
     <!-- Settings Screen -->
     <string name="inference_backend">Inference Backend</string>

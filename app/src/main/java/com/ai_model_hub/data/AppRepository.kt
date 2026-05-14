@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ai_model_hub.sdk.BackendPreference
-import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,7 +21,6 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class AppRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
-    private val gson = Gson()
 
     private val DOWNLOADED_MODELS_KEY = stringSetPreferencesKey("downloaded_models")
     private val ENABLED_MODELS_KEY = stringSetPreferencesKey("enabled_models")
@@ -48,26 +46,26 @@ class AppRepository @Inject constructor(
         prefs[SPECULATIVE_DECODING_KEY] ?: false
     }
 
-    suspend fun markModelDownloaded(modelName: String) {
+    suspend fun markModelDownloaded(id: String) {
         context.dataStore.edit { prefs ->
             val current = prefs[DOWNLOADED_MODELS_KEY] ?: emptySet()
-            prefs[DOWNLOADED_MODELS_KEY] = current + modelName
+            prefs[DOWNLOADED_MODELS_KEY] = current + id
         }
     }
 
-    suspend fun markModelDeleted(modelName: String) {
+    suspend fun markModelDeleted(id: String) {
         context.dataStore.edit { prefs ->
             val current = prefs[DOWNLOADED_MODELS_KEY] ?: emptySet()
-            prefs[DOWNLOADED_MODELS_KEY] = current - modelName
+            prefs[DOWNLOADED_MODELS_KEY] = current - id
         }
         // Also disable the model when deleted
-        setModelEnabled(modelName, false)
+        setModelEnabled(id, false)
     }
 
-    suspend fun setModelEnabled(modelName: String, enabled: Boolean) {
+    suspend fun setModelEnabled(id: String, enabled: Boolean) {
         context.dataStore.edit { prefs ->
             val current = prefs[ENABLED_MODELS_KEY] ?: emptySet()
-            prefs[ENABLED_MODELS_KEY] = if (enabled) current + modelName else current - modelName
+            prefs[ENABLED_MODELS_KEY] = if (enabled) current + id else current - id
         }
     }
 
@@ -83,7 +81,7 @@ class AppRepository @Inject constructor(
         }
     }
 
-    fun isModelDownloaded(modelName: String, downloadedModels: Set<String>): Boolean {
-        return modelName in downloadedModels
+    fun isModelDownloaded(id: String, downloadedModels: Set<String>): Boolean {
+        return id in downloadedModels
     }
 }

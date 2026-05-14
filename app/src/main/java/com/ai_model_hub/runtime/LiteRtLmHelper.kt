@@ -4,8 +4,8 @@ import android.content.Context
 import android.os.StatFs
 import android.util.Log
 import com.ai_model_hub.data.getModelFilePath
+import com.ai_model_hub.data.remote.RemoteModel
 import com.ai_model_hub.sdk.BackendPreference
-import com.ai_model_hub.sdk.Model
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
@@ -44,7 +44,7 @@ object LiteRtLmHelper {
 
     private fun initialize(
         context: Context,
-        model: Model,
+        model: RemoteModel,
         backendPreference: BackendPreference = BackendPreference.CPU,
         enableSpeculativeDecoding: Boolean = false,
     ): Engine {
@@ -85,7 +85,7 @@ object LiteRtLmHelper {
 
         try {
             val useGpu = backendPreference == BackendPreference.GPU &&
-                    BackendPreference.GPU in model.supportedBackends
+                    model.defaultConfig.accelerators.contains("gpu", ignoreCase = true)
             Log.d(TAG, "Using backend: ${if (useGpu) "GPU" else "CPU"} for model: ${model.name}")
 
             // Enable MTP via speculative decoding
@@ -95,7 +95,7 @@ object LiteRtLmHelper {
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = if (useGpu) Backend.GPU() else Backend.CPU(),
-                maxNumTokens = model.maxTokens,
+                maxNumTokens = model.defaultConfig.maxTokens,
                 cacheDir = xnnpackCacheDir.absolutePath,
             )
             val engine = Engine(engineConfig)
@@ -109,7 +109,7 @@ object LiteRtLmHelper {
 
     fun createSession(
         context: Context,
-        model: Model,
+        model: RemoteModel,
         conversationConfig: ConversationConfig = ConversationConfig(
             samplerConfig = SamplerConfig(
                 topK = 40,
@@ -121,7 +121,7 @@ object LiteRtLmHelper {
         enableSpeculativeDecoding: Boolean = false,
     ): LlmSession {
         // One engine per model — create only if not yet loaded.
-        val holder = engineHolders.getOrPut(model.name) {
+        val holder = engineHolders.getOrPut(model.modelId) {
             EngineHolder(
                 engine = initialize(
                     context = context,
@@ -264,7 +264,7 @@ object LiteRtLmHelper {
         // Close the engine only when no other session is still using this holder.
         val holderStillInUse = sessions.any { it.engineHolder === holder }
         if (!holderStillInUse) {
-            engineHolders.remove(holder.model.name)
+            engineHolders.remove(holder.model.modelId)
             try {
                 holder.engine.close()
             } catch (e: Exception) {

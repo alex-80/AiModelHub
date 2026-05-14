@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
-import com.ai_model_hub.sdk.functional.TranslateAvailableLanguage
+import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.sdk.functional.TranslationException
 import com.ai_model_hub.sdk.functional.translateStream
 import kotlinx.coroutines.Job
@@ -40,14 +40,15 @@ class TranslateViewModel(app: Application) : AndroidViewModel(app) {
                     errorMessage = if (state is ConnectionState.Error) state.message
                     else _uiState.value.errorMessage,
                     availableModels = availableModels,
-                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) "" else availableModels.first(),
+                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) null
+                    else availableModels.first(),
                 )
             }
         }
     }
 
-    fun selectModel(name: String) {
-        _uiState.value = _uiState.value.copy(selectedModel = name, result = "")
+    fun selectModel(model: Model) {
+        _uiState.value = _uiState.value.copy(selectedModel = model, result = "")
     }
 
     fun setSourceLanguage(lang: String) {
@@ -64,6 +65,7 @@ class TranslateViewModel(app: Application) : AndroidViewModel(app) {
 
     fun translate() {
         val state = _uiState.value
+        val model = state.selectedModel ?: return
         if (state.inputText.isBlank() || state.isTranslating) return
 
         translateJob?.cancel()
@@ -72,7 +74,7 @@ class TranslateViewModel(app: Application) : AndroidViewModel(app) {
         translateJob = viewModelScope.launch {
             try {
                 translateStream(
-                    modelName = state.selectedModel,
+                    modelId = model.modelId,
                     text = state.inputText,
                     targetLanguage = state.targetLanguage,
                     sourceLanguage = state.sourceLanguage,

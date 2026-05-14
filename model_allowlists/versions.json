@@ -1,0 +1,9 @@
+{
+  "mappings": [
+    {
+      "from": 13,
+      "allowlist": "0_4_0.json",
+      "comment": "versionCode >= 13 (start-version only, open-ended)"
+    }
+  ]
+}

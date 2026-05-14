@@ -165,19 +165,30 @@ class AiHubClient {
     }
 
     /**
-     * Load a model by name and receive a callback when loading completes.
+     * Load a model and receive a session ID when loading completes.
      *
-     * [onDone] is called on the binder thread with an empty string on success, or an error
-     * message on failure. Run this on an IO thread; the callback arrives asynchronously after
+     * Runs the callback asynchronously on the binder thread. Call this on an IO thread.
      */
-    suspend fun createSession(modelName: String): String =
+    suspend fun createSession(model: Model): String =
         suspendCancellableCoroutine {
-            requireService().createSession(modelName, object : ICreateSessionCallback.Stub() {
+            requireService().createSession(model, object : ICreateSessionCallback.Stub() {
                 override fun onSuccess(sessionId: String) = it.resume(sessionId)
                 override fun onError(errorMessage: String) =
                     it.resumeWithException(RuntimeException(errorMessage))
             })
         }
+
+    /**
+     * Convenience overload: looks up the [Model] by [modelId] from [getAvailableModels],
+     * then delegates to [createSession(model)].
+     *
+     * @throws IllegalArgumentException if no enabled model with the given [modelId] is found.
+     */
+    suspend fun createSession(modelId: String): String {
+        val model = getAvailableModels().find { it.modelId == modelId }
+            ?: throw IllegalArgumentException("No available model with modelId: $modelId")
+        return createSession(model)
+    }
 
     /** Unload a previously loaded model. */
     fun closeSession(sessionId: String) = requireService().closeSession(sessionId)
@@ -185,8 +196,8 @@ class AiHubClient {
     /** Returns true if the model is currently loaded and ready. */
     fun isSessionAlive(sessionId: String): Boolean = requireService().isSessionAlive(sessionId)
 
-    /** Returns names of all currently loaded models. */
-    fun getAvailableModels(): List<String> = requireService().getAvailableModels()
+    /** Returns all currently enabled models. */
+    fun getAvailableModels(): List<Model> = requireService().getAvailableModels()
 
     /** Stop an ongoing generation for the given model. */
     fun stopGeneration(sessionId: String) = requireService().stopGeneration(sessionId)

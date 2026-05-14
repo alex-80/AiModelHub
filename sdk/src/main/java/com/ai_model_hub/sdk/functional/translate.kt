@@ -59,9 +59,9 @@ class TranslationException(message: String, val causeType: TranslationErrorCause
 private const val TAG = "TranslateFunction"
 
 /**
- * Translate [text] to [targetLanguage] using [modelName] and emit incremental tokens.
+ * Translate [text] to [targetLanguage] using [model] and emit incremental tokens.
  *
- * @param modelName          Name of the model to use (e.g. "Gemma 4 E2B").
+ * @param model              The model to use for translation.
  * @param text               The text to translate.
  * @param targetLanguage     Target language name (use [TranslateAvailableLanguage] constants).
  * @param sourceLanguage     Source language name. Leave empty to let the model auto-detect.
@@ -70,7 +70,7 @@ private const val TAG = "TranslateFunction"
  * @throws TranslationException if connecting, loading, or generating fails.
  */
 fun translateStream(
-    modelName: String,
+    modelId: String,
     text: String,
     targetLanguage: String,
     sourceLanguage: String = "",
@@ -90,12 +90,12 @@ fun translateStream(
     check(connected is ConnectionState.Connected)
 
     // 2. Load model and get session ID
-    val sessionId =  client.createSession(modelName)
-    Log.d(TAG, "Model \"$modelName\" loaded with session ID: $sessionId")
+    val sessionId = client.createSession(modelId)
+    Log.d(TAG, "Model \"${modelId}\" loaded with session ID: $sessionId")
 
     // 3. Build prompt and stream tokens
     val prompt = buildPrompt(text, targetLanguage, sourceLanguage)
-    Log.d(TAG, "Sending prompt to model \"$modelName\" (session: $sessionId): ${prompt.take(100)}")
+    Log.d(TAG, "Sending prompt to model \"${modelId}\" (session: $sessionId): ${prompt.take(100)}")
     client.sendMessage(sessionId, prompt).collect { token -> emit(token) }
 
     // 4. close session after generation completes
@@ -111,14 +111,14 @@ fun translateStream(
  * @throws TranslationException on any failure.
  */
 suspend fun translate(
-    modelName: String,
+    modelId: String,
     text: String,
     targetLanguage: String,
     sourceLanguage: String = "",
     connectionTimeoutMs: Long = DEFAULT_CONNECTION_TIMEOUT_MS,
 ): String {
     val result = StringBuilder()
-    translateStream(modelName, text, targetLanguage, sourceLanguage, connectionTimeoutMs)
+    translateStream(modelId, text, targetLanguage, sourceLanguage, connectionTimeoutMs)
         .collect { token -> result.append(token) }
     return result.toString().trim()
 }

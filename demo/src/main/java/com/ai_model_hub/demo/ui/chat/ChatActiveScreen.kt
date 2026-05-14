@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.ai_model_hub.demo.ui.chat.widget.ChatBubble
 import com.ai_model_hub.demo.ui.chat.widget.ChatInputBar
 import com.ai_model_hub.demo.ui.theme.AiHubDemoTheme
+import com.ai_model_hub.sdk.Model
 
 @Composable
 fun ChatActiveScreen(
@@ -61,7 +62,7 @@ fun ChatActiveScreen(
             .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         ChatTopBar(
-            modelName = state.selectedModel,
+            modelName = state.selectedModel?.displayName?.ifEmpty { state.selectedModel.name } ?: "",
             onClearMessages = onClearMessages,
             onBack = onBack,
         )
@@ -174,7 +175,7 @@ private fun ChatActiveScreenPreview() {
     AiHubDemoTheme {
         ChatActiveScreen(
             state = ChatUiState(
-                selectedModel = "gemma-4b",
+                selectedModel = Model(name = "gemma-4b", displayName = "Gemma 4B", modelId = "litert-community/gemma-4b"),
                 isModelLoaded = true,
                 messages = listOf(
                     ChatMessage(role = "user", content = "Hello!"),

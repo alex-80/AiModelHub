@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai_model_hub.sdk.AiHubClient
 import com.ai_model_hub.sdk.ConnectionState
+import com.ai_model_hub.sdk.Model
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +37,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                     isModelLoaded = if (state !is ConnectionState.Connected) false
                     else _uiState.value.isModelLoaded,
                     availableModels = availableModels,
-                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) "" else availableModels.first(),
+                    selectedModel = if (state !is ConnectionState.Connected || availableModels.isEmpty()) null
+                    else availableModels.first(),
                 )
             }
         }
@@ -44,8 +46,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     fun connect() = client.connect()
 
-    fun selectAndLoad(name: String) {
-        selectModel(name)
+    fun selectAndLoad(model: Model) {
+        selectModel(model)
         createSession()
     }
 
@@ -58,9 +60,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    fun selectModel(name: String) {
+    fun selectModel(model: Model) {
         _uiState.value = _uiState.value.copy(
-            selectedModel = name,
+            selectedModel = model,
             sessionId = "",
             isModelLoaded = false,
             messages = emptyList(),
@@ -68,11 +70,11 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun createSession() {
-        val model = _uiState.value.selectedModel
+        val model = _uiState.value.selectedModel ?: return
         _uiState.value = _uiState.value.copy(isLoadingModel = true, errorMessage = "")
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val sessionId = client.createSession(modelName = model)
+                val sessionId = client.createSession(model = model)
                 _uiState.value = _uiState.value.copy(
                     isLoadingModel = false,
                     isModelLoaded = true,

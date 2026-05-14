@@ -1,6 +1,7 @@
 package com.ai_model_hub.demo.ui.chat
 
 import com.ai_model_hub.sdk.ConnectionState
+import com.ai_model_hub.sdk.Model
 
 data class ChatMessage(
     val role: String, // "user" or "assistant"
@@ -13,12 +14,12 @@ data class ChatMessage(
 
 data class ChatUiState(
     val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val selectedModel: String = "",
+    val selectedModel: Model? = null,
     val sessionId: String = "",
     val isModelLoaded: Boolean = false,
     val isLoadingModel: Boolean = false,
     val messages: List<ChatMessage> = emptyList(),
     val isGenerating: Boolean = false,
     val errorMessage: String = "",
-    val availableModels: List<String> = emptyList(),
+    val availableModels: List<Model> = emptyList(),
 )

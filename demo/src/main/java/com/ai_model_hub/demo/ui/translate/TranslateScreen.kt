@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai_model_hub.demo.ui.theme.AiHubDemoTheme
+import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.sdk.functional.TranslateAvailableLanguage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -168,9 +169,9 @@ fun TranslateScreen(
 @Composable
 private fun ModelDropdown(
     label: String,
-    options: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit,
+    options: List<Model>,
+    selected: Model?,
+    onSelect: (Model) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -180,7 +181,7 @@ private fun ModelDropdown(
         modifier = modifier,
     ) {
         OutlinedTextField(
-            value = selected,
+            value = selected?.displayName?.ifEmpty { selected.name } ?: "",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -190,10 +191,10 @@ private fun ModelDropdown(
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
+            options.forEach { model ->
                 DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = { onSelect(option); expanded = false },
+                    text = { Text(model.displayName.ifEmpty { model.name }) },
+                    onClick = { onSelect(model); expanded = false },
                 )
             }
         }

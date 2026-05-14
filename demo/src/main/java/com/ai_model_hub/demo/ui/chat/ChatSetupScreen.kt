@@ -38,12 +38,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ai_model_hub.demo.ui.theme.AiHubDemoTheme
 import com.ai_model_hub.sdk.ConnectionState
+import com.ai_model_hub.sdk.Model
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatSetupScreen(
     state: ChatUiState,
-    onSelectModel: (String) -> Unit,
+    onSelectModel: (Model) -> Unit,
     onRetry: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -105,14 +106,14 @@ fun ChatSetupScreen(
 }
 
 @Composable
-private fun ModelListContent(models: List<String>, onSelect: (String) -> Unit) {
+private fun ModelListContent(models: List<Model>, onSelect: (Model) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(models) { modelName ->
-            ModelItemCard(name = modelName, onClick = { onSelect(modelName) })
+        items(models) { model ->
+            ModelItemCard(name = model.displayName.ifEmpty { model.name }, onClick = { onSelect(model) })
         }
     }
 }
@@ -176,15 +177,16 @@ private fun ConnectingContent() {
 }
 
 @Composable
-private fun LoadingModelContent(modelName: String) {
+private fun LoadingModelContent(model: Model?) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CircularProgressIndicator()
+            val name = model?.displayName?.ifEmpty { model.name } ?: ""
             Text(
-                "Loading $modelName…",
+                "Loading $name…",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -237,7 +239,10 @@ private fun ChatSetupScreenPreview() {
         ChatSetupScreen(
             state = ChatUiState(
                 connectionState = ConnectionState.Connecting,
-                availableModels = listOf("gemma-4-e2b-it-int4", "gemma-3n-e4b-it-int4"),
+                availableModels = listOf(
+                    Model(name = "gemma-4-e2b-it-int4", displayName = "Gemma 4 E2B", modelId = "litert-community/gemma-4-E2B"),
+                    Model(name = "gemma-3n-e4b-it-int4", displayName = "Gemma 4 E4B", modelId = "litert-community/gemma-4-E4B"),
+                ),
             ),
             onSelectModel = {},
             onRetry = {},

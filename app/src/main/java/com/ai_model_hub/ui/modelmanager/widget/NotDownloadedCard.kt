@@ -2,26 +2,18 @@ package com.ai_model_hub.ui.modelmanager.widget
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -34,13 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ai_model_hub.R
+import com.ai_model_hub.data.remote.RemoteModel
 import com.ai_model_hub.extension.formatFileSize
-import com.ai_model_hub.sdk.Model
 import kotlin.text.ifEmpty
 
 @Composable
 fun NotDownloadedCard(
-    model: Model,
+    model: RemoteModel,
     errorMessage: String?,
     onDownload: () -> Unit,
 ) {
@@ -76,7 +68,7 @@ fun NotDownloadedCard(
                         color = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Text(
-                            text = model.version,
+                            text = model.version.uppercase(),
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -133,15 +125,14 @@ fun NotDownloadedCard(
 @Composable
 fun NotDownloadedCardPreview() {
     NotDownloadedCard(
-        model = Model(
+        model = RemoteModel(
             name = "gpt-3.5-turbo",
             displayName = "GPT-3.5 Turbo",
             description = "A powerful language model for various tasks.",
-            url = "https://example.com/gpt-3.5-turbo.litertm",
             sizeInBytes = 1_500_000_000L,
-            downloadFileName = "gpt-3.5-turbo.litertm",
-            version = "1.0",
-            huggingFaceRepo = "example/gpt-3.5-turbo",
+            modelFile = "gpt-3.5-turbo.litertm",
+            commitHash = "abc1234",
+            modelId = "example/gpt-3.5-turbo",
         ),
         errorMessage = null,
         onDownload = {},

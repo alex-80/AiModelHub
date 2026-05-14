@@ -13,11 +13,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -31,8 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ai_model_hub.R
+import com.ai_model_hub.data.remote.RemoteModel
 import com.ai_model_hub.extension.formatFileSize
-import com.ai_model_hub.sdk.Model
 import com.ai_model_hub.ui.modelmanager.ModelUiState
 
 @Composable
@@ -41,6 +43,7 @@ fun DownloadedCard(
     versionTag: String,
     onDelete: () -> Unit,
     onToggleEnabled: () -> Unit,
+    onUpdate: () -> Unit,
 ) {
     val model = state.model
     val isEnabled = state.isEnabled
@@ -86,6 +89,19 @@ fun DownloadedCard(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
+                        if (state.hasUpdate) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.update_available),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
+                            }
+                        }
                         Text(
                             text = " ${model.sizeInBytes.formatFileSize()}",
                             style = MaterialTheme.typography.labelSmall,
@@ -98,6 +114,14 @@ fun DownloadedCard(
                             text = model.description,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (state.hasUpdate && state.updateInfo.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = state.updateInfo,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                 }
@@ -130,7 +154,9 @@ fun DownloadedCard(
                         else MaterialTheme.colorScheme.outline,
                     )
                     Text(
-                        text = if (isEnabled) stringResource(R.string.model_enabled) else stringResource(R.string.model_disabled),
+                        text = if (isEnabled) stringResource(R.string.model_enabled) else stringResource(
+                            R.string.model_disabled
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isEnabled) MaterialTheme.colorScheme.primary
@@ -141,6 +167,30 @@ fun DownloadedCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
+                    if (state.hasUpdate) {
+                        OutlinedButton(
+                            onClick = onUpdate,
+                            modifier = Modifier.height(32.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 10.dp,
+                                vertical = 0.dp
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SystemUpdate,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.tertiary,
+                            )
+                            Spacer(Modifier.size(4.dp))
+                            Text(
+                                text = stringResource(R.string.action_update),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = onDelete,
                         modifier = Modifier.size(32.dp),
@@ -163,20 +213,22 @@ fun DownloadedCard(
 fun DownloadedCardPreview() {
     DownloadedCard(
         state = ModelUiState(
-            model = Model(
+            model = RemoteModel(
                 name = "gpt-3.5-turbo",
                 displayName = "GPT-3.5 Turbo",
                 description = "A powerful language model for various tasks.",
-                url = "https://example.com/gpt-3.5-turbo.litertm",
                 sizeInBytes = 1_500_000_000L,
-                downloadFileName = "gpt-3.5-turbo.litertm",
-                version = "1.0",
-                huggingFaceRepo = "example/gpt-3.5-turbo",
+                modelFile = "gpt-3.5-turbo.litertm",
+                commitHash = "abc1234",
+                modelId = "example/gpt-3.5-turbo",
             ),
             isEnabled = true,
+            hasUpdate = true,
+            updateInfo = "New version available with improved performance.",
         ),
         versionTag = "v1.0",
         onDelete = {},
         onToggleEnabled = {},
+        onUpdate = {},
     )
 }

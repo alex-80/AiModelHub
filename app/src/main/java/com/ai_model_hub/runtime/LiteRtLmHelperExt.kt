@@ -1,41 +1,11 @@
 package com.ai_model_hub.runtime
 
-import android.content.Context
 import android.util.Log
-import com.ai_model_hub.sdk.BackendPreference
-import com.ai_model_hub.sdk.ModelAllowlist
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
-import com.google.ai.edge.litertlm.ConversationConfig
-import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "LiteRtLmHelperExt"
-
-fun LiteRtLmHelper.createSession(
-    context: Context,
-    modelName: String,
-    conversationConfig: ConversationConfig = ConversationConfig(
-        samplerConfig = SamplerConfig(
-            topK = 40,
-            topP = 0.95,
-            temperature = 0.8,
-        )
-    ),
-    backendPreference: BackendPreference = BackendPreference.CPU,
-    enableSpeculativeDecoding: Boolean = false,
-): LlmSession {
-    val model = ModelAllowlist.findByName(modelName) ?: run {
-        throw IllegalArgumentException("Model not found: $modelName")
-    }
-    return createSession(
-        context = context,
-        model = model,
-        conversationConfig = conversationConfig,
-        backendPreference = backendPreference,
-        enableSpeculativeDecoding = enableSpeculativeDecoding,
-    )
-}
 
 /** Convenience overload: accepts a plain [String] and stores it in session history. */
 fun LiteRtLmHelper.sendMessage(
