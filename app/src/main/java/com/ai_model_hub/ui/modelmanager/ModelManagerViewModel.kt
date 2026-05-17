@@ -162,6 +162,10 @@ class ModelManagerViewModel @Inject constructor(
                 remoteModel.modelId,
                 !isCurrentlyEnabled
             )
+            appRepository.setModelEnabled(
+                remoteModel.name,
+                !isCurrentlyEnabled
+            )
         }
     }
 
