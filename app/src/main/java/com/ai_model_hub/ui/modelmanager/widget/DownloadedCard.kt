@@ -3,6 +3,7 @@ package com.ai_model_hub.ui.modelmanager.widget
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,65 +67,50 @@ fun DownloadedCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = model.displayName.ifEmpty { model.name },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isEnabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline,
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Text(
-                            text = model.displayName.ifEmpty { model.name },
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isEnabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outline,
+                            text = versionTag.uppercase(),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
+                    }
+                    if (state.hasUpdate) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
                         ) {
                             Text(
-                                text = versionTag.uppercase(),
+                                text = stringResource(R.string.update_available),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
                             )
                         }
-                        if (state.hasUpdate) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.update_available),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                )
-                            }
-                        }
-                        Text(
-                            text = " ${model.sizeInBytes.formatFileSize()}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
-                    if (model.description.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = model.description,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (state.hasUpdate && state.updateInfo.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = state.updateInfo,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
+                    Text(
+                        text = " ${model.sizeInBytes.formatFileSize()}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+
                 Switch(
                     checked = isEnabled,
                     onCheckedChange = { onToggleEnabled() },
@@ -135,6 +121,20 @@ fun DownloadedCard(
                         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                         uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     ),
+                )
+            }
+            if (model.description.isNotEmpty()) {
+                Text(
+                    text = model.description,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (state.hasUpdate && state.updateInfo.isNotEmpty()) {
+                Text(
+                    text = state.updateInfo,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
             }
             Row(
@@ -225,6 +225,54 @@ fun DownloadedCardPreview() {
             isEnabled = true,
             hasUpdate = true,
             updateInfo = "New version available with improved performance.",
+        ),
+        versionTag = "v1.0",
+        onDelete = {},
+        onToggleEnabled = {},
+        onUpdate = {},
+    )
+}
+
+@Preview
+@Composable
+fun DownloadedCardNotUpdatePreview() {
+    DownloadedCard(
+        state = ModelUiState(
+            model = RemoteModel(
+                name = "gpt-3.5-turbo",
+                displayName = "GPT-3.5 Turbo",
+                description = "A powerful language model for various tasks.",
+                sizeInBytes = 1_500_000_000L,
+                modelFile = "gpt-3.5-turbo.litertm",
+                commitHash = "abc1234",
+                modelId = "example/gpt-3.5-turbo",
+            ),
+            isEnabled = true,
+            hasUpdate = false,
+        ),
+        versionTag = "v1.0",
+        onDelete = {},
+        onToggleEnabled = {},
+        onUpdate = {},
+    )
+}
+
+@Preview
+@Composable
+fun DownloadedCardDisabledPreview() {
+    DownloadedCard(
+        state = ModelUiState(
+            model = RemoteModel(
+                name = "gpt-3.5-turbo",
+                displayName = "GPT-3.5 Turbo",
+                description = "A powerful language model for various tasks.",
+                sizeInBytes = 1_500_000_000L,
+                modelFile = "gpt-3.5-turbo.litertm",
+                commitHash = "abc1234",
+                modelId = "example/gpt-3.5-turbo",
+            ),
+            isEnabled = false,
+            hasUpdate = false
         ),
         versionTag = "v1.0",
         onDelete = {},
