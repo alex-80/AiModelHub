@@ -178,16 +178,18 @@ dependencyResolutionManagement {
 
 ```kotlin
 // app/build.gradle.kts
-implementation("com.ai_model_hub:sdk:0.3.0")
+implementation("com.ai_model_hub:sdk:0.4.0")
 ```
 
-> 将 `0.3.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
+> 将 `0.4.0` 替换为[最新发布版本](https://github.com/alex-80/AiModelHub/releases)。
 
 > SDK 的 `AndroidManifest.xml` 中已声明所需的 `<uses-permission>` 和 `<queries>` 条目。Android 的 Manifest Merger 会在构建时自动将其合并到您的 App 中，无需手动添加任何 manifest 配置。
 
 ### 3. 使用 `AiHubClient`
 
 每个会话通过 `createSession` 返回的 `sessionId` 标识。一个 `sessionId` 对应一段独立的对话上下文；同一模型的多个会话共享同一个 Engine。
+
+`createSession` 是 **suspend 函数**，需在协程或 `Dispatchers.IO` 中调用。
 
 ```kotlin
 class MyViewModel : ViewModel() {
@@ -212,10 +214,18 @@ class MyViewModel : ViewModel() {
     fun connect() = client.connect()
 
     fun loadModel() {
-        try {
-            sessionId = client.createSession(modelName = "Gemma 4 E2B")
-        } catch (e: Exception) {
-            /* handle */
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // 方式 A：从 getAvailableModels() 获取 Model 对象后传入
+                val model = client.getAvailableModels().first()
+                sessionId = client.createSession(model)
+
+                // 方式 B：直接传入 modelId 字符串
+                // val model = client.getAvailableModels().first()
+                // sessionId = client.createSession(model.modelId)
+            } catch (e: Exception) {
+                /* handle */
+            }
         }
     }
 
@@ -236,27 +246,39 @@ class MyViewModel : ViewModel() {
 }
 ```
 
-### AIDL 接口参考
+### Model 类与常量
 
-```java
-// IAiModelHubService
-List<String> getAvailableModels();
-// 创建会话，通过回调返回 sessionId
-void    createSession(String modelName, ICreateSessionCallback callback);
-void    closeSession(String sessionId);
-boolean isSessionAlive(String sessionId);
-void    sendMessage(String sessionId, String message, IAiResponseCallback callback);
-void    stopGeneration(String sessionId);
-void    resetSession(String sessionId);  // 清空对话历史
+```kotlin
+// Model 数据类（Parcelable，由 getAvailableModels() 返回）
+data class Model(
+    val name: String,         // 可读名称，例如 "Gemma 4 E2B"
+    val displayName: String,
+    val description: String,
+    val modelId: String,      // Hugging Face 仓库 ID，例如 "litert-community/gemma-4-E2B-it-litert-lm"
+)
+```
 
-// ICreateSessionCallback
-void onSuccess(String sessionId);
-void onError(String errorMessage);
+### `AiHubClient` API 参考
 
-// IAiResponseCallback
-void onToken(String token);        // 增量 token
-void onComplete(String fullText);  // 生成完成
-void onError(String errorMessage); // 发生错误
+```kotlin
+// 连接管理
+val connectionState: StateFlow<ConnectionState>
+fun connect()
+fun disconnect()
+
+// 模型查询
+fun getAvailableModels(): List<Model>
+
+// 会话生命周期（suspend — 需在协程 / Dispatchers.IO 中调用）
+suspend fun createSession(model: Model): String
+suspend fun createSession(modelId: String): String  // 按 modelId 自动查找 Model
+fun closeSession(sessionId: String)
+fun isSessionAlive(sessionId: String): Boolean
+
+// 推理
+fun sendMessage(sessionId: String, message: String): Flow<String>  // 流式输出增量 token
+fun stopGeneration(sessionId: String)
+fun resetSession(sessionId: String)  // 清空对话历史
 ```
 
 ---

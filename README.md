@@ -178,16 +178,18 @@ Then add the SDK dependency:
 
 ```kotlin
 // app/build.gradle.kts
-implementation("com.ai_model_hub:sdk:0.3.0")
+implementation("com.ai_model_hub:sdk:0.4.0")
 ```
 
-> Replace `0.3.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
+> Replace `0.4.0` with the [latest release tag](https://github.com/alex-80/AiModelHub/releases).
 
 > The SDK's `AndroidManifest.xml` already declares the required `<uses-permission>` and `<queries>` entries. Android's manifest merger will automatically include them in your app — no manual manifest changes needed.
 
 ### 3. Use `AiHubClient`
 
 Sessions are identified by a `sessionId` returned from `createSession`. One session = one independent conversation context; multiple sessions on the same model share a single engine.
+
+`createSession` is a **suspend function** — call it from a coroutine or `Dispatchers.IO` scope.
 
 ```kotlin
 class MyViewModel : ViewModel() {
@@ -212,12 +214,20 @@ class MyViewModel : ViewModel() {
     fun connect() = client.connect()
 
     fun loadModel() {
-        try {
-            sessionId = client.createSession(modelName = "Gemma 4 E2B")
-        } catch (e: Exception) {
-            /* handle */
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Option A: pass a Model object from getAvailableModels()
+                val model = client.getAvailableModels().first()
+                sessionId = client.createSession(model)
+
+                // Option B: pass a modelId string directly
+                // val model = client.getAvailableModels().first()
+                // sessionId = client.createSession(model.modelId)
+            } catch (e: Exception) {
+                /* handle */
+            }
         }
-    }   
+    }
 
     fun chat(message: String) {
         val id = sessionId ?: return
@@ -236,27 +246,39 @@ class MyViewModel : ViewModel() {
 }
 ```
 
-### AIDL interface reference
+### Model class and constants
 
-```java
-// IAiModelHubService
-List<String> getAvailableModels();
-// Creates a session and returns its ID via callback
-void    createSession(String modelName, ICreateSessionCallback callback);
-void    closeSession(String sessionId);
-boolean isSessionAlive(String sessionId);
-void    sendMessage(String sessionId, String message, IAiResponseCallback callback);
-void    stopGeneration(String sessionId);
-void    resetSession(String sessionId);  // clears conversation history
+```kotlin
+// Model data class (Parcelable, returned by getAvailableModels())
+data class Model(
+    val name: String,         // human-readable name, e.g. "Gemma 4 E2B"
+    val displayName: String,
+    val description: String,
+    val modelId: String,      // Hugging Face repo ID, e.g. "litert-community/gemma-4-E2B-it-litert-lm"
+)
+```
 
-// ICreateSessionCallback
-void onSuccess(String sessionId);
-void onError(String errorMessage);
+### `AiHubClient` API reference
 
-// IAiResponseCallback
-void onToken(String token);       // incremental token
-void onComplete(String fullText); // generation finished
-void onError(String errorMessage);
+```kotlin
+// Connection
+val connectionState: StateFlow<ConnectionState>
+fun connect()
+fun disconnect()
+
+// Model discovery
+fun getAvailableModels(): List<Model>
+
+// Session lifecycle  (suspend — call from a coroutine / Dispatchers.IO)
+suspend fun createSession(model: Model): String
+suspend fun createSession(modelId: String): String  // looks up Model by modelId
+fun closeSession(sessionId: String)
+fun isSessionAlive(sessionId: String): Boolean
+
+// Inference
+fun sendMessage(sessionId: String, message: String): Flow<String>  // emits incremental tokens
+fun stopGeneration(sessionId: String)
+fun resetSession(sessionId: String)  // clears conversation history
 ```
 
 ---
